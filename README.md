@@ -117,7 +117,7 @@ No. Sections 1 and 2 (records of processing + access points) are populated mecha
 <dependency>
   <groupId>com.github.iambilotta.spring-gdpr</groupId>
   <artifactId>spring-gdpr-starter</artifactId>
-  <version>v0.1.0</version>
+  <version>v0.1.1</version>
 </dependency>
 ```
 
@@ -132,7 +132,7 @@ No. Sections 1 and 2 (records of processing + access points) are populated mecha
       <path>
         <groupId>com.github.iambilotta.spring-gdpr</groupId>
         <artifactId>spring-gdpr-processor</artifactId>
-        <version>v0.1.0</version>
+        <version>v0.1.1</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -155,7 +155,7 @@ classpath:db/migration/V1__gdpr_audit_access.sql
 <plugin>
   <groupId>com.github.iambilotta.spring-gdpr</groupId>
   <artifactId>spring-gdpr-maven-plugin</artifactId>
-  <version>v0.1.0</version>
+  <version>v0.1.1</version>
   <executions><execution><goals><goal>verify</goal></goals></execution></executions>
 </plugin>
 ```
