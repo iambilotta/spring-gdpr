@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <!--
+        spring-gdpr v0.1 baseline schema. Liquibase-compatible alternative to the
+        Flyway migration at db/migration/V1__gdpr_audit_access.sql. Use one OR the
+        other; do not apply both.
+    -->
+
+    <changeSet id="spring-gdpr-v0.1-audit-access" author="iambilotta">
+        <createTable tableName="gdpr_audit_access">
+            <column name="event_id" type="VARCHAR(64)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="at_ts" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="actor" type="VARCHAR(255)"/>
+            <column name="subject_id" type="VARCHAR(255)"/>
+            <column name="target_type" type="VARCHAR(512)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="target_member" type="VARCHAR(255)"/>
+            <column name="legal_basis" type="VARCHAR(64)"/>
+            <column name="special_category" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="gdpr_audit_access" indexName="idx_gdpr_audit_access_subject">
+            <column name="subject_id"/>
+            <column name="at_ts"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
