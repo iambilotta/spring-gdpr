@@ -34,8 +34,8 @@ class GdprIntegrationTest {
     @BeforeEach
     void seed() {
         auditSink.clear();
-        repository.save(buildCustomer("alice-1", "Alice", "alice@example.com", "AT-12345"));
-        repository.save(buildCustomer("bob-2", "Bob", "bob@example.com", "BT-67890"));
+        repository.save(buildCustomer("alice-1", "Alice", "alice@example.com", "AT-12345", "asthma"));
+        repository.save(buildCustomer("bob-2", "Bob", "bob@example.com", "BT-67890", null));
     }
 
     @Test
@@ -59,12 +59,13 @@ class GdprIntegrationTest {
         assertThat(repository.findBySubjectId("bob-2")).isPresent();
     }
 
-    private static Customer buildCustomer(String id, String name, String email, String taxId) {
+    private static Customer buildCustomer(String id, String name, String email, String taxId, String healthCondition) {
         Customer customer = new Customer();
         customer.setId(id);
         customer.setFullName(name);
         customer.setEmail(email);
         customer.setTaxId(taxId);
+        customer.setHealthCondition(healthCondition);
         customer.setCreatedAt(Instant.now());
         return customer;
     }

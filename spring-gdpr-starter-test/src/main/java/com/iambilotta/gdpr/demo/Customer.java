@@ -13,7 +13,11 @@ import com.iambilotta.gdpr.annotations.GdprRetention;
  * audit advisor fires, retention scheduler picks the row up, DPIA + ROPA artifacts list it.
  */
 @GdprDataSubjects(categories = {"customer"})
-@GdprLegalBasis(value = GdprLegalBasis.LawfulBasis.CONTRACT, article = "6(1)(b)", note = "performance of sales contract")
+@GdprLegalBasis(
+        value = GdprLegalBasis.LawfulBasis.CONTRACT,
+        article = "6(1)(b)",
+        note = "performance of sales contract",
+        specialBasis = GdprLegalBasis.Art9Condition.EXPLICIT_CONSENT)
 @GdprRetention(period = "P5Y", strategy = GdprRetention.Strategy.ANONYMIZE, createdAtField = "createdAt")
 @GdprErasable(strategy = GdprErasable.Strategy.DELETE, subjectIdField = "id")
 public class Customer {
@@ -26,8 +30,11 @@ public class Customer {
     @GdprPersonalData(description = "primary email", specialCategory = false)
     private String email;
 
-    @GdprPersonalData(description = "national tax id", specialCategory = true)
+    @GdprPersonalData(description = "national tax id (special-category by national law)", specialCategory = false)
     private String taxId;
+
+    @GdprPersonalData(description = "self-declared health condition (Art. 9)", specialCategory = true)
+    private String healthCondition;
 
     private Instant createdAt;
 
@@ -61,6 +68,14 @@ public class Customer {
 
     public void setTaxId(String taxId) {
         this.taxId = taxId;
+    }
+
+    public String getHealthCondition() {
+        return healthCondition;
+    }
+
+    public void setHealthCondition(String healthCondition) {
+        this.healthCondition = healthCondition;
     }
 
     public Instant getCreatedAt() {

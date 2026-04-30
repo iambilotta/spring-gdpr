@@ -227,10 +227,64 @@ public class GdprAnnotationProcessor extends AbstractProcessor {
         }
 
         void withLegalBasis(GdprLegalBasis ann) {
-            String article = ann.article() != null && !ann.article().isBlank() ? ann.article()
-                    : "6(1) " + ann.value().name();
-            this.legalBasis = article;
+            this.legalBasis = composeArticleReference(ann);
             this.hasTypeLevelAnnotation = true;
+        }
+
+        /**
+         * Composes the article reference the same way {@code PersonalDataAccessAdvisor.formatLegalBasis}
+         * does at runtime. Kept here as a duplication on purpose: the processor module has no
+         * dependency on the starter module, and pulling starter classes into APT classpath would
+         * inflate the processor jar with unrelated Spring code.
+         */
+        private static String composeArticleReference(GdprLegalBasis ann) {
+            String art6 = ann.article() != null && !ann.article().isBlank()
+                    ? ann.article()
+                    : mapArt6(ann.value());
+            String art9 = mapArt9(ann.specialBasis());
+            if (art9 != null) {
+                return art6 + " + " + art9;
+            }
+            String art10 = mapArt10(ann.criminalBasis());
+            if (art10 != null) {
+                return art6 + " + " + art10;
+            }
+            return art6;
+        }
+
+        private static String mapArt6(GdprLegalBasis.LawfulBasis value) {
+            return switch (value) {
+                case CONSENT -> "6(1)(a)";
+                case CONTRACT -> "6(1)(b)";
+                case LEGAL_OBLIGATION -> "6(1)(c)";
+                case VITAL_INTERESTS -> "6(1)(d)";
+                case PUBLIC_INTEREST -> "6(1)(e)";
+                case LEGITIMATE_INTERESTS -> "6(1)(f)";
+            };
+        }
+
+        private static String mapArt9(GdprLegalBasis.Art9Condition c) {
+            return switch (c) {
+                case NONE -> null;
+                case EXPLICIT_CONSENT -> "9(2)(a)";
+                case EMPLOYMENT_LAW -> "9(2)(b)";
+                case VITAL_INTERESTS -> "9(2)(c)";
+                case NON_PROFIT -> "9(2)(d)";
+                case PUBLICLY_DISCLOSED -> "9(2)(e)";
+                case LEGAL_CLAIMS -> "9(2)(f)";
+                case SUBSTANTIAL_PUBLIC_INTEREST -> "9(2)(g)";
+                case PREVENTIVE_MEDICINE -> "9(2)(h)";
+                case PUBLIC_HEALTH -> "9(2)(i)";
+                case ARCHIVE_PURPOSES -> "9(2)(j)";
+            };
+        }
+
+        private static String mapArt10(GdprLegalBasis.Art10Basis b) {
+            return switch (b) {
+                case NONE -> null;
+                case AUTHORISED_BY_LAW -> "10 (authorised by law)";
+                case OFFICIAL_AUTHORITY -> "10 (official authority)";
+            };
         }
 
         void withRetention(GdprRetention ann) {
