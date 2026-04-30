@@ -5,6 +5,8 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -35,6 +37,8 @@ import com.iambilotta.gdpr.starter.web.GdprController;
 @EnableConfigurationProperties(GdprProperties.class)
 public class GdprAutoConfiguration {
 
+    private static final Logger LOG = LoggerFactory.getLogger(GdprAutoConfiguration.class);
+
     @Bean
     @ConditionalOnMissingBean
     public ActorResolver gdprActorResolver() {
@@ -47,18 +51,40 @@ public class GdprAutoConfiguration {
         return SubjectIdResolver.byParameterName();
     }
 
+    /**
+     * Single decision point for the audit sink. Three outcomes, one bean:
+     * <ol>
+     *   <li>{@code spring.gdpr.audit.jdbc-enabled=true} AND a {@link DataSource} bean
+     *       exists AND {@code JdbcTemplate} on classpath: returns {@link JdbcAuditSink}</li>
+     *   <li>{@code jdbc-enabled=true} but DataSource missing: logs WARN and falls back
+     *       to {@link Slf4jAuditSink} so the app starts. Misconfiguration is a runtime
+     *       warning, not a startup crash.</li>
+     *   <li>Default: {@link Slf4jAuditSink}</li>
+     * </ol>
+     *
+     * <p>Consumers that want a custom sink declare their own {@link AuditSink} bean and
+     * the {@code @ConditionalOnMissingBean} guard skips this factory entirely.
+     */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "spring.gdpr.audit", name = "jdbc-enabled", havingValue = "true")
-    @ConditionalOnClass(name = "org.springframework.jdbc.core.JdbcTemplate")
-    public AuditSink gdprJdbcAuditSink(GdprProperties properties, DataSource dataSource) {
+    public AuditSink gdprAuditSink(GdprProperties properties, ObjectProvider<DataSource> dataSourceProvider) {
+        if (!properties.getAudit().isJdbcEnabled()) {
+            return new Slf4jAuditSink();
+        }
+        if (!isJdbcTemplateOnClasspath()) {
+            LOG.warn(
+                    "spring.gdpr.audit.jdbc-enabled=true but spring-jdbc is not on the classpath. "
+                            + "Falling back to Slf4jAuditSink. Add spring-boot-starter-jdbc to enable JDBC persistence.");
+            return new Slf4jAuditSink();
+        }
+        DataSource dataSource = dataSourceProvider.getIfAvailable();
+        if (dataSource == null) {
+            LOG.warn(
+                    "spring.gdpr.audit.jdbc-enabled=true but no DataSource bean is available. "
+                            + "Falling back to Slf4jAuditSink. Configure spring.datasource.* or supply a DataSource bean.");
+            return new Slf4jAuditSink();
+        }
         return new JdbcAuditSink(dataSource, properties.getAudit().getTable());
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public AuditSink gdprAuditSink() {
-        return new Slf4jAuditSink();
     }
 
     @Bean
@@ -73,6 +99,16 @@ public class GdprAutoConfiguration {
     public ErasureService gdprErasureService(ObjectProvider<ErasureHandler> handlers) {
         List<ErasureHandler> resolved = handlers.orderedStream().toList();
         return new ErasureService(resolved.isEmpty() ? Collections.emptyList() : resolved);
+    }
+
+    private static boolean isJdbcTemplateOnClasspath() {
+        try {
+            Class.forName("org.springframework.jdbc.core.JdbcTemplate", false,
+                    GdprAutoConfiguration.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException ex) {
+            return false;
+        }
     }
 
     @Configuration(proxyBeanMethods = false)
