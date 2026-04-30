@@ -10,7 +10,21 @@ by area: **Annotations**, **Runtime**, **Build-time**, **DX**, **Migrations**,
 
 ## [Unreleased]
 
-(no changes yet on top of v0.1.0)
+(no changes yet on top of v0.1.1)
+
+## [0.1.1] - 2026-05-01
+
+### Fixed
+
+- JitPack distribution build now succeeds: added Maven Wrapper 3.9.9 because
+  the JitPack sandbox ships Maven 3.6.0, which trips the
+  `maven-compiler-plugin 3.13.0` minimum-version check (3.6.3+ required).
+  `jitpack.yml` now invokes `./mvnw` instead of the system `mvn`, downloading
+  Maven 3.9.9 to JitPack's build cache on first run. Local CI on GitHub
+  Actions unaffected (already on Maven 3.9.x). ([4d3b70e], [49ba0a0])
+- Bump released because the JitPack v0.1.0 build failed and the JitPack
+  cache holds the failed-build state for that tag. The v0.1.1 tag forces
+  a clean rebuild against the wrapper-enabled commit.
 
 ## [0.1.0] - 2026-05-01
 
@@ -118,7 +132,8 @@ First public release. Apache 2.0. Distributed via [JitPack](https://jitpack.io/#
 (no advisories at this time; vulnerability disclosure channel is open at
 `francesco@iambilotta.com`, see [SECURITY.md](SECURITY.md))
 
-[Unreleased]: https://github.com/iambilotta/spring-gdpr/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/iambilotta/spring-gdpr/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/iambilotta/spring-gdpr/releases/tag/v0.1.1
 [0.1.0]: https://github.com/iambilotta/spring-gdpr/releases/tag/v0.1.0
 
 [526e0ba]: https://github.com/iambilotta/spring-gdpr/commit/526e0ba
@@ -130,3 +145,5 @@ First public release. Apache 2.0. Distributed via [JitPack](https://jitpack.io/#
 [527dd67]: https://github.com/iambilotta/spring-gdpr/commit/527dd67
 [28029c9]: https://github.com/iambilotta/spring-gdpr/commit/28029c9
 [ba35eaf]: https://github.com/iambilotta/spring-gdpr/commit/ba35eaf
+[4d3b70e]: https://github.com/iambilotta/spring-gdpr/commit/4d3b70e
+[49ba0a0]: https://github.com/iambilotta/spring-gdpr/commit/49ba0a0
