@@ -54,7 +54,7 @@
 
         <spring-boot.version>3.5.0</spring-boot.version>
         <byte-buddy.version>1.17.5</byte-buddy.version>
-        <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
+        <maven-plugin-api.version>3.9.15</maven-plugin-api.version>
         <maven-plugin-annotations.version>3.13.1</maven-plugin-annotations.version>
         <junit-jupiter.version>5.10.2</junit-jupiter.version>
         <assertj.version>3.25.3</assertj.version>
