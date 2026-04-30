@@ -6,6 +6,11 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ### Added
 
+- `additional-spring-configuration-metadata.json`: rich descriptions + defaults + hints for every `spring.gdpr.*` property. IDE autocomplete (IntelliJ / VSCode / Eclipse) now surfaces prose tooltips, not just types.
+- `AuditSinkMetrics`: optional Micrometer binder. Exposes `spring.gdpr.audit.{submitted,dropped,failed}` gauges when Micrometer is on the classpath AND the sink is wrapped by `AsyncAuditSinkDecorator`. Alert recipe: page on `rate(spring_gdpr_audit_dropped_total[5m]) > 0`.
+- `.github/dependabot.yml`: weekly Maven scans grouped by family (spring-boot / testing / maven-plugins), monthly for the quickstart, weekly for github-actions.
+- `.github/workflows/codeql.yml`: GitHub CodeQL Java analyzer on push/PR + weekly cron.
+- README rewrite: 60-second TL;DR + "Should I use this?" decision matrix + 5-minute path + ASCII architecture diagram + "Common questions" + "Observability" section. Quick links TOC.
 - `examples/quickstart-postgres/`: runnable Spring Boot 3.5 demo with PostgreSQL via Docker Compose, Flyway-applied audit schema, Spring Security with `USER` + `DPO` roles, custom `ActorResolver` reading the security principal. End-to-end `MockMvc` test suite (4 tests) covering create, fetch, role-gated erasure.
 - `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), `SECURITY.md` (90-day disclosure window), `.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md`.
 - `db/migration/V1__gdpr_audit_access.sql` (Flyway) and `db/changelog/spring-gdpr-changelog.xml` (Liquibase) shipped inside the starter jar. Apply via your existing migration tool; `spring.gdpr.audit.auto-create-schema=true` for dev only.
@@ -15,6 +20,7 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ### Changed
 
+- Maven Surefire pre-attaches `byte-buddy-agent` so Mockito does not self-attach at runtime. JDK 24+ disables dynamic agent loading by default; the pre-attach future-proofs the test suite and removes the JDK WARNING noise from build logs.
 - `JdbcAuditSink` no longer creates the audit table on startup by default. Production path expects the schema to be applied via Flyway/Liquibase. Set `spring.gdpr.audit.auto-create-schema=true` to opt back in.
 - `JdbcAuditSink` now fails fast at bean creation when the configured table is missing and auto-create is off, with an error message pointing to the bundled migration scripts.
 - `PersonalDataAccessAdvisor.capture()` now wraps `sink.write()` in a try/catch. Sink failures are logged at ERROR with the event id and target member; the business method continues. Audit gap surfaces in logs, request thread is not blocked.
@@ -24,9 +30,9 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ### Test surface
 
-- Starter unit tests: 31 (was 12).
+- Starter unit tests: 33 (was 12).
 - Integration tests: 2 in starter-test (full Spring context) + 4 in quickstart example.
-- Optional Postgres IT: 2 (gated, requires Docker API >= 1.40).
+- Optional Postgres IT: 2 (gated on `-Dspring-gdpr.it=true`, requires Docker API >= 1.40).
 
 ## [0.1.0] - target 2026-Q3
 
