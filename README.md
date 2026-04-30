@@ -2,7 +2,8 @@
 
 [![ci](https://github.com/iambilotta/spring-gdpr/actions/workflows/ci.yml/badge.svg)](https://github.com/iambilotta/spring-gdpr/actions/workflows/ci.yml)
 [![codeql](https://github.com/iambilotta/spring-gdpr/actions/workflows/codeql.yml/badge.svg)](https://github.com/iambilotta/spring-gdpr/actions/workflows/codeql.yml)
-[![Maven Central](https://img.shields.io/maven-central/v/com.iambilotta.gdpr/spring-gdpr-starter.svg?label=maven%20central)](https://central.sonatype.com/artifact/com.iambilotta.gdpr/spring-gdpr-starter)
+[![JitPack](https://jitpack.io/v/iambilotta/spring-gdpr.svg)](https://jitpack.io/#iambilotta/spring-gdpr)
+[![Release](https://img.shields.io/github/v/release/iambilotta/spring-gdpr?include_prereleases&sort=semver)](https://github.com/iambilotta/spring-gdpr/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/java-21%2B-orange.svg)](https://adoptium.net/)
 [![Spring Boot](https://img.shields.io/badge/spring--boot-3.5%2B-6db33f.svg)](https://spring.io/projects/spring-boot)
@@ -97,19 +98,30 @@ No. Sections 1 and 2 (records of processing + access points) are populated mecha
 
 ## Setup in five minutes
 
-> v0.1 is not yet on Maven Central (namespace claim pending). Until publication, build from source: `git clone https://github.com/iambilotta/spring-gdpr && mvn -DskipTests install`. After publication, the snippets below resolve directly.
+> **Distribution at v0.1**: published via [JitPack](https://jitpack.io/#iambilotta/spring-gdpr). JitPack builds the tag on first request and caches the artifacts; no Sonatype account or credentials needed on your side. Maven Central namespace `com.iambilotta.gdpr` is reserved but deferred to a later release. The `groupId` on JitPack is `com.github.iambilotta`; on Maven Central (when it lands) it will be `com.iambilotta.gdpr`. Both will coexist.
 
-**1. Add the runtime starter:**
+**1. Add the JitPack repository to your `pom.xml`:**
+
+```xml
+<repositories>
+  <repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+  </repository>
+</repositories>
+```
+
+**2. Add the runtime starter:**
 
 ```xml
 <dependency>
-  <groupId>com.iambilotta.gdpr</groupId>
+  <groupId>com.github.iambilotta.spring-gdpr</groupId>
   <artifactId>spring-gdpr-starter</artifactId>
-  <version>0.1.0</version>
+  <version>v0.1.0</version>
 </dependency>
 ```
 
-**2. Wire the build-time generator on the compiler plugin:**
+**3. Wire the build-time generator on the compiler plugin:**
 
 ```xml
 <plugin>
@@ -118,16 +130,16 @@ No. Sections 1 and 2 (records of processing + access points) are populated mecha
   <configuration>
     <annotationProcessorPaths>
       <path>
-        <groupId>com.iambilotta.gdpr</groupId>
+        <groupId>com.github.iambilotta.spring-gdpr</groupId>
         <artifactId>spring-gdpr-processor</artifactId>
-        <version>0.1.0</version>
+        <version>v0.1.0</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
 </plugin>
 ```
 
-**3. Apply the audit-table migration via Flyway:**
+**4. Apply the audit-table migration via Flyway:**
 
 ```
 classpath:db/migration/V1__gdpr_audit_access.sql
@@ -135,22 +147,30 @@ classpath:db/migration/V1__gdpr_audit_access.sql
 
 (or the bundled Liquibase changelog at `db/changelog/spring-gdpr-changelog.xml`)
 
-**4. Annotate one domain entity** (see [the example at the top of this README](#you-write-this))
-
-**5. Run `mvn compile`** and open the two generated files under `target/generated-sources/annotations/spring/gdpr/`.
+**5. Annotate one domain entity** (see [the example at the top of this README](#you-write-this)) and run `mvn compile`. Open the two generated files under `target/generated-sources/annotations/spring/gdpr/`.
 
 **Optional, fail CI when generators stop running:**
 
 ```xml
 <plugin>
-  <groupId>com.iambilotta.gdpr</groupId>
+  <groupId>com.github.iambilotta.spring-gdpr</groupId>
   <artifactId>spring-gdpr-maven-plugin</artifactId>
-  <version>0.1.0</version>
+  <version>v0.1.0</version>
   <executions><execution><goals><goal>verify</goal></goals></execution></executions>
 </plugin>
 ```
 
 For an end-to-end runnable example with PostgreSQL via Docker Compose + Spring Security: see [`examples/quickstart-postgres/`](examples/quickstart-postgres/README.md).
+
+**Build from source (alternative to JitPack):**
+
+```bash
+git clone https://github.com/iambilotta/spring-gdpr
+cd spring-gdpr
+mvn -B -DskipTests install
+```
+
+This installs `com.iambilotta.gdpr:*:0.1.0` to your local Maven repo. After install, drop the JitPack repository and switch the dependency `groupId` to `com.iambilotta.gdpr` and the version to `0.1.0`.
 
 ## Architecture
 
