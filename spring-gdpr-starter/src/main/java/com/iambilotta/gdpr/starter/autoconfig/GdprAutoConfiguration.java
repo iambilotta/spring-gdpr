@@ -21,6 +21,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 import com.iambilotta.gdpr.starter.GdprProperties;
 import com.iambilotta.gdpr.starter.audit.ActorResolver;
+import com.iambilotta.gdpr.starter.audit.AsyncAuditSinkDecorator;
 import com.iambilotta.gdpr.starter.audit.AuditSink;
 import com.iambilotta.gdpr.starter.audit.JdbcAuditSink;
 import com.iambilotta.gdpr.starter.audit.PersonalDataAccessAdvisor;
@@ -68,6 +69,16 @@ public class GdprAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public AuditSink gdprAuditSink(GdprProperties properties, ObjectProvider<DataSource> dataSourceProvider) {
+        AuditSink base = buildBaseSink(properties, dataSourceProvider);
+        GdprProperties.Async async = properties.getAudit().getAsync();
+        if (!async.isEnabled()) {
+            return base;
+        }
+        return new AsyncAuditSinkDecorator(
+                base, async.getThreadCount(), async.getQueueCapacity(), async.getAwaitMillis());
+    }
+
+    private AuditSink buildBaseSink(GdprProperties properties, ObjectProvider<DataSource> dataSourceProvider) {
         if (!properties.getAudit().isJdbcEnabled()) {
             return new Slf4jAuditSink();
         }

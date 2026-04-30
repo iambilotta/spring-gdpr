@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.iambilotta.gdpr.starter.audit.AsyncAuditSinkDecorator;
 import com.iambilotta.gdpr.starter.audit.AuditSink;
 import com.iambilotta.gdpr.starter.audit.JdbcAuditSink;
 import com.iambilotta.gdpr.starter.audit.Slf4jAuditSink;
@@ -21,7 +22,8 @@ class GdprAutoConfigurationTest {
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(
                     DataSourceAutoConfiguration.class,
-                    GdprAutoConfiguration.class));
+                    GdprAutoConfiguration.class))
+            .withPropertyValues("spring.gdpr.audit.async.enabled=false");
 
     @Test
     void defaultsToSlf4jSinkWhenJdbcDisabled() {
@@ -47,7 +49,9 @@ class GdprAutoConfigurationTest {
     void fallsBackToSlf4jWhenJdbcEnabledButNoDataSource() {
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(GdprAutoConfiguration.class))
-                .withPropertyValues("spring.gdpr.audit.jdbc-enabled=true")
+                .withPropertyValues(
+                        "spring.gdpr.audit.jdbc-enabled=true",
+                        "spring.gdpr.audit.async.enabled=false")
                 .run(ctx -> assertThat(ctx).hasSingleBean(AuditSink.class)
                         .getBean(AuditSink.class)
                         .isInstanceOf(Slf4jAuditSink.class));
@@ -69,6 +73,15 @@ class GdprAutoConfigurationTest {
         runner
                 .withPropertyValues("spring.gdpr.enabled=false")
                 .run(ctx -> assertThat(ctx).doesNotHaveBean(AuditSink.class));
+    }
+
+    @Test
+    void wrapsSinkInAsyncDecoratorByDefault() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(GdprAutoConfiguration.class))
+                .run(ctx -> assertThat(ctx).hasSingleBean(AuditSink.class)
+                        .getBean(AuditSink.class)
+                        .isInstanceOf(AsyncAuditSinkDecorator.class));
     }
 
     @Configuration(proxyBeanMethods = false)

@@ -50,6 +50,8 @@ public class GdprProperties {
          */
         private String table = "gdpr_audit_access";
 
+        private final Async async = new Async();
+
         public boolean isJdbcEnabled() {
             return jdbcEnabled;
         }
@@ -64,6 +66,70 @@ public class GdprProperties {
 
         public void setTable(String table) {
             this.table = table;
+        }
+
+        public Async getAsync() {
+            return async;
+        }
+    }
+
+    public static class Async {
+        /**
+         * Wrap the audit sink with {@code AsyncAuditSinkDecorator}. Default true: production
+         * deployments should never block the request thread on audit I/O. Set false only
+         * for tests that need deterministic ordering, or for stacks that already wrap the
+         * sink with their own dispatcher.
+         */
+        private boolean enabled = true;
+
+        /**
+         * Worker thread count. One is enough for log-aggregation and indexed JDBC writes.
+         * Increase only if profiling shows the worker as the bottleneck.
+         */
+        private int threadCount = 1;
+
+        /**
+         * Bounded queue capacity. Drop-newest fallback when full: under saturation we keep
+         * what is already in flight and the saturation surfaces via {@code dropped_total}
+         * in WARN logs.
+         */
+        private int queueCapacity = 1024;
+
+        /**
+         * Milliseconds to wait for the executor to drain on shutdown before forcing termination.
+         */
+        private long awaitMillis = 5000L;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public int getThreadCount() {
+            return threadCount;
+        }
+
+        public void setThreadCount(int threadCount) {
+            this.threadCount = threadCount;
+        }
+
+        public int getQueueCapacity() {
+            return queueCapacity;
+        }
+
+        public void setQueueCapacity(int queueCapacity) {
+            this.queueCapacity = queueCapacity;
+        }
+
+        public long getAwaitMillis() {
+            return awaitMillis;
+        }
+
+        public void setAwaitMillis(long awaitMillis) {
+            this.awaitMillis = awaitMillis;
         }
     }
 
