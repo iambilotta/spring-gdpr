@@ -1,0 +1,9 @@
+jdk:
+  - openjdk21
+
+install:
+  - mvn -B -ntp -DskipTests install
+
+before_install:
+  - sdk install java 21.0.4-tem
+  - sdk use java 21.0.4-tem

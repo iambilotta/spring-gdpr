@@ -10,14 +10,26 @@ by area: **Annotations**, **Runtime**, **Build-time**, **DX**, **Migrations**,
 
 ## [Unreleased]
 
+(no changes yet on top of v0.1.0)
+
+## [0.1.0] - 2026-05-01
+
+First public release. Apache 2.0. Distributed via [JitPack](https://jitpack.io/#iambilotta/spring-gdpr) (Maven Central namespace `com.iambilotta.gdpr` deferred to a later release).
+
 ### Added
 
 #### Annotations
+- `@GdprPersonalData`, `@GdprDataSubjects`, `@GdprLegalBasis`, `@GdprRetention`,
+  `@GdprErasable`. Five-annotation API covering Art. 5(1)(e), 6, 9, 10, 17, 30, 35.
+  ([526e0ba])
 - `Art9Condition` and `Art10Basis` enums on `@GdprLegalBasis` for special-category
   (health, biometric, religion, ...) and criminal-convictions data. Audit log + ROPA
   + DPIA now record a composite article reference like `6(1)(b) + 9(2)(h)`. ([f476345])
 
 #### Runtime
+- `PersonalDataAccessAdvisor` (Spring AOP `@Before` advisor): captures every call to a
+  `@GdprPersonalData`-annotated method or class, dispatches one `AuditAccessRecord`
+  per access. ([526e0ba])
 - `AsyncAuditSinkDecorator`: bounded-queue async wrapper around any `AuditSink`. ON by
   default. Drop-newest fallback under saturation, observable via `droppedCount()` +
   WARN logs. Default queue 1024, default 1 worker thread. ([f07053c])
@@ -25,12 +37,28 @@ by area: **Annotations**, **Runtime**, **Build-time**, **DX**, **Migrations**,
   `spring.gdpr.audit.{submitted,dropped,failed}` gauges when Micrometer is on the
   classpath AND the sink is wrapped by `AsyncAuditSinkDecorator`. Alert recipe in
   Javadoc: page on `rate(spring_gdpr_audit_dropped_total[5m]) > 0`. ([527dd67])
+- REST endpoints `DELETE /gdpr/erasure/{subjectId}` (Art. 17) and
+  `GET /gdpr/audit/access` (Art. 15). Mounted at `${spring.gdpr.web.base-path}`,
+  default `/gdpr`. No auth shipped, wire Spring Security around the base path. ([526e0ba])
+- `RetentionScheduler` with `Clock` injection. `@Scheduled(cron = "${spring.gdpr.retention.cron}")`,
+  default daily at 03:00 (Art. 5(1)(e)). ([526e0ba])
 
 #### Build-time
+- `GdprAnnotationProcessor` (APT). Walks every annotated type and emits two
+  artifacts under `target/generated-sources/annotations/spring/gdpr/`:
+  `ropa.csv` (Art. 30) + `dpia.md` (Art. 35 scaffold, sections 3-6 left for human
+  judgment). Deterministic output, sorted by FQN, committed-friendly. Splits
+  records-of-processing rows from access-points so a `@GdprPersonalData` method on
+  a non-record type is not a false-positive ROPA row. ([526e0ba], [f476345])
 - `JdbcAuditSinkPostgresIT`: Testcontainers-backed Postgres integration test
   asserting the Flyway migration applies cleanly on PostgreSQL 16 and the JDBC sink
   reads/writes against the migrated schema. Gated on `-Dspring-gdpr.it=true`,
   requires Docker API >= 1.40. ([a688574])
+
+#### Maven plugin
+- `spring-gdpr-maven-plugin` with three mojos: `gdpr:dpia` and `gdpr:ropa` copy the
+  generated artifacts to `target/spring-gdpr/` for release pipelines, `gdpr:verify`
+  fails the build at the `verify` phase if either is missing. ([526e0ba])
 
 #### DX
 - `additional-spring-configuration-metadata.json`: prose descriptions, defaults, and
@@ -50,57 +78,28 @@ by area: **Annotations**, **Runtime**, **Build-time**, **DX**, **Migrations**,
   test suite (4 tests) covering create, fetch, role-gated erasure. ([0ecd9f5])
 
 #### CI/security
+- `.github/workflows/ci.yml`: build + test + Postgres IT (`-Dspring-gdpr.it=true`)
+  + quickstart compile + DPIA/ROPA presence assertion + artifact upload. ([0ecd9f5])
+- `.github/workflows/codeql.yml`: GitHub CodeQL Java analyzer on push/PR + weekly cron.
+  ([527dd67])
 - `.github/dependabot.yml`: weekly Maven scans grouped by family (spring-boot /
   testing / maven-plugins), monthly for the quickstart, weekly for github-actions.
-  ([527dd67])
-- `.github/workflows/codeql.yml`: GitHub CodeQL Java analyzer on push/PR + weekly cron.
   ([527dd67])
 - `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), `SECURITY.md`
   (90-day disclosure window), `.github/ISSUE_TEMPLATE/`,
   `.github/PULL_REQUEST_TEMPLATE.md`. ([0ecd9f5])
 
 #### Docs
-- README rewrite: hero now shows INPUT (annotated entity) AND OUTPUT (sample ROPA +
-  DPIA). Decision-first navigation (Should I use this? + Common questions before
-  setup), Mermaid architecture diagram (with ASCII fallback), merged "Limitations" +
-  "Anti-patterns" into a single "Reality check" section. ([28029c9])
+- README with input/output hero pair, "Should I use this?" decision matrix, 5-minute
+  setup, Mermaid architecture diagram (ASCII fallback), "Common questions",
+  "Reality check" section consolidating limitations + anti-patterns. ([28029c9],
+  [ba35eaf])
+- Companion blog post draft `docs/articles/01-gdpr-compliance-by-annotation.md`.
+  ([0ecd9f5])
 
 ### Changed
 
-#### Runtime
-- `JdbcAuditSink` no longer creates the audit table on startup by default. Production
-  path expects the schema to be applied via Flyway/Liquibase. Set
-  `spring.gdpr.audit.auto-create-schema=true` to opt back in. ([a688574])
-- `JdbcAuditSink` now fails fast at bean creation when the configured table is
-  missing and auto-create is off, with an error message pointing to the bundled
-  migration scripts. ([a688574])
-- `PersonalDataAccessAdvisor.capture()` now wraps `sink.write()` in a try/catch.
-  Sink failures are logged at ERROR with the event id and target member; the
-  business method continues. Audit gap surfaces in logs, request thread is not
-  blocked. ([f07053c])
-- `pickPersonalData` selection bias replaced with `isAnyAnnotationSpecialCategory`
-  aggregation (logical OR across method, type, parameters). A method touching one
-  normal and one Art. 9 parameter is now flagged correctly regardless of declaration
-  order. ([f476345])
-
-#### Configuration
-- `GdprAutoConfiguration`: collapsed two `@Bean AuditSink` methods (one per branch,
-  both `@ConditionalOnMissingBean`) into a single factory that picks JDBC or Slf4j
-  based on config + classpath + DataSource availability. Three explicit fallback
-  paths, each with a WARN log so operator misconfig surfaces in the deploy summary
-  instead of an opaque startup crash. ([bfdc216])
-
-#### CI/security
-- Maven Surefire pre-attaches `byte-buddy-agent` so Mockito does not self-attach at
-  runtime. JDK 24+ disables dynamic agent loading by default; the pre-attach
-  future-proofs the test suite and removes the JDK WARNING noise from build logs.
-  ([527dd67])
-
-#### Examples
-- Demo `Customer` entity: `taxId` is no longer marked `specialCategory` (national
-  tax IDs fall under Art. 87, not Art. 9). Added a genuine `healthCondition` field
-  with `specialCategory = true` and updated the legal basis to include
-  `Art9Condition.EXPLICIT_CONSENT`. Integration test seed updated. ([f476345])
+(none, this is the first release)
 
 ### Deprecated
 
@@ -112,25 +111,12 @@ by area: **Annotations**, **Runtime**, **Build-time**, **DX**, **Migrations**,
 
 ### Fixed
 
-(none, this is the pre-release hardening pass)
+(none)
 
 ### Security
 
 (no advisories at this time; vulnerability disclosure channel is open at
 `francesco@iambilotta.com`, see [SECURITY.md](SECURITY.md))
-
-## [0.1.0] - target 2026-Q3
-
-Initial public release. Apache 2.0. Maven Central namespace `com.iambilotta.gdpr`
-(claim pending). Highlights:
-
-- Five-annotation API (`@GdprPersonalData`, `@GdprDataSubjects`, `@GdprLegalBasis`,
-  `@GdprRetention`, `@GdprErasable`) covering Art. 5(1)(e), 6, 9, 10, 17, 30, 35.
-- Runtime: AOP advisor, async audit sink (SLF4J + JDBC + custom), retention scheduler,
-  REST endpoints for Art. 15 right-of-access and Art. 17 right-to-erasure.
-- Build-time: APT processor producing deterministic `ropa.csv` + `dpia.md` artifacts
-  under `target/generated-sources/`.
-- Maven plugin: `gdpr:dpia`, `gdpr:ropa`, `gdpr:verify` goals.
 
 [Unreleased]: https://github.com/iambilotta/spring-gdpr/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/iambilotta/spring-gdpr/releases/tag/v0.1.0
@@ -143,3 +129,4 @@ Initial public release. Apache 2.0. Maven Central namespace `com.iambilotta.gdpr
 [0ecd9f5]: https://github.com/iambilotta/spring-gdpr/commit/0ecd9f5
 [527dd67]: https://github.com/iambilotta/spring-gdpr/commit/527dd67
 [28029c9]: https://github.com/iambilotta/spring-gdpr/commit/28029c9
+[ba35eaf]: https://github.com/iambilotta/spring-gdpr/commit/ba35eaf
