@@ -19,8 +19,15 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: build and test
-        run: mvn -B -ntp verify
+      - name: build and test (incl. postgres IT via testcontainers)
+        run: mvn -B -ntp -Dspring-gdpr.it=true verify
+
+      - name: install starter to local repo for quickstart build
+        run: mvn -B -ntp -DskipTests install
+
+      - name: build quickstart example
+        working-directory: examples/quickstart-postgres
+        run: mvn -B -ntp test
 
       - name: assert dpia + ropa exist
         run: |

@@ -1,8 +1,14 @@
 # spring-gdpr
 
+[![ci](https://github.com/iambilotta/spring-gdpr/actions/workflows/ci.yml/badge.svg)](https://github.com/iambilotta/spring-gdpr/actions/workflows/ci.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/com.iambilotta.gdpr/spring-gdpr-starter.svg?label=maven%20central)](https://central.sonatype.com/artifact/com.iambilotta.gdpr/spring-gdpr-starter)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Java](https://img.shields.io/badge/java-21%2B-orange.svg)](https://adoptium.net/)
+[![Spring Boot](https://img.shields.io/badge/spring--boot-3.5%2B-6db33f.svg)](https://spring.io/projects/spring-boot)
+
 GDPR compliance-by-annotation for Spring Boot. Annotate domain types, get an audit log of every personal-data access, an automatic right-to-erasure flow, retention enforcement, and a build-time DPIA + ROPA generator. Apache 2.0, no SaaS sign-up.
 
-> Status: **planning / v0.1 in progress**, not yet on Maven Central. Naming verified clear on GitHub at 2026-04-29.
+> Status: **v0.1 in progress**, not yet on Maven Central. Naming verified clear on GitHub at 2026-04-29. Badges above resolve once the repo is pushed and the namespace is claimed.
 
 ## Why
 
@@ -203,11 +209,31 @@ ActorResolver gdprActorResolver() {
 }
 ```
 
+## Limitations and gotchas
+
+Honest list. Read before adopting.
+
+- **Throughput**: the async decorator's default queue is 1024 entries with 1 worker thread. Sustained traffic above ~10k personal-data accesses per second per pod will saturate and start dropping. Increase `queue-capacity` and `thread-count`, OR ship audit through SLF4J + log aggregator instead of JDBC.
+- **Oracle / DB2**: the bundled migration uses `BOOLEAN` and `CREATE INDEX IF NOT EXISTS`, which Oracle and DB2 do not accept. Adapt the migration script to your engine. The auto-create dev shortcut catches the index failure and warns; the table creation will still fail on Oracle without an adapted DDL.
+- **REST endpoints are unauthenticated by default**: the starter ships routes at `/gdpr/erasure/{subjectId}` and `/gdpr/audit/access` with no auth filter. You MUST wire Spring Security around `${spring.gdpr.web.base-path}/**` before exposing the app. See the [quickstart example](examples/quickstart-postgres/README.md) for a working pattern.
+- **Async by default trades audit gaps under saturation for request-thread availability**: `dropped_total` counter exposes the gap, ops should alert on it. If you require zero-loss audit, set `spring.gdpr.audit.async.enabled=false` and accept that sink failures will surface as 500s on the request thread.
+- **No batching on JDBC sink writes**: each event is a single `INSERT`. Adopters at >1k events/sec on JDBC should write a custom `AuditSink` bean that batches.
+- **Demo `subjectIdField` resolution is parameter-name-based**: methods named `findById(String id)` will not resolve a subject id with the default `SubjectIdResolver`. Override the bean to read from MDC, security context, or a tenant header.
+
 ## Anti-patterns we explicitly reject
 
 1. We do **not** pretend to be a DPO substitute. Output is evidence-as-code, not legal advice.
 2. We do **not** invent GDPR articles. Every reference points to an article that exists.
 3. We are **not** a Logback wrapper. Without DPIA + ROPA generators it would be an audit logger, which is not what GDPR asks for.
+
+## Project files
+
+- [LICENSE](LICENSE) (Apache 2.0)
+- [CHANGELOG.md](CHANGELOG.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) (Contributor Covenant 2.1)
+- [SECURITY.md](SECURITY.md) (90-day disclosure window)
+- [examples/quickstart-postgres/](examples/quickstart-postgres/README.md) (runnable end-to-end demo)
 
 ## Roadmap
 

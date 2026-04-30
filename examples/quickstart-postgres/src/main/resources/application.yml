@@ -1,0 +1,42 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: spring-gdpr-quickstart
+  datasource:
+    url: jdbc:postgresql://localhost:5433/gdpr
+    username: gdpr
+    password: gdpr
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.format_sql: true
+  flyway:
+    enabled: true
+    locations:
+      - classpath:db/migration
+
+  gdpr:
+    enabled: true
+    web:
+      base-path: /gdpr
+    audit:
+      jdbc-enabled: true
+      table: gdpr_audit_access
+      auto-create-schema: false  # production path, Flyway applies V1__ instead
+      async:
+        enabled: true
+        thread-count: 1
+        queue-capacity: 1024
+    retention:
+      enabled: true
+      cron: "0 0 3 * * *"
+    erasure:
+      rest-enabled: true
+
+logging:
+  level:
+    com.iambilotta.gdpr: INFO
+    gdpr.audit: INFO
