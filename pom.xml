@@ -53,6 +53,7 @@
         <java.version>21</java.version>
 
         <spring-boot.version>3.5.0</spring-boot.version>
+        <byte-buddy.version>1.17.5</byte-buddy.version>
         <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
         <maven-plugin-annotations.version>3.13.1</maven-plugin-annotations.version>
         <junit-jupiter.version>5.10.2</junit-jupiter.version>
@@ -110,6 +111,14 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
+                    <configuration>
+                        <!--
+                            Mockito self-attaches as a Java agent, which the JDK is
+                            deprecating. Pre-attach byte-buddy-agent so future JDKs
+                            that disallow dynamic agent loading still run clean.
+                        -->
+                        <argLine>-javaagent:${settings.localRepository}/net/bytebuddy/byte-buddy-agent/${byte-buddy.version}/byte-buddy-agent-${byte-buddy.version}.jar</argLine>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

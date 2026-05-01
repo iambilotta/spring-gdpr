@@ -23,6 +23,7 @@ import com.iambilotta.gdpr.starter.GdprProperties;
 import com.iambilotta.gdpr.starter.audit.ActorResolver;
 import com.iambilotta.gdpr.starter.audit.AsyncAuditSinkDecorator;
 import com.iambilotta.gdpr.starter.audit.AuditSink;
+import com.iambilotta.gdpr.starter.audit.AuditSinkMetrics;
 import com.iambilotta.gdpr.starter.audit.JdbcAuditSink;
 import com.iambilotta.gdpr.starter.audit.PersonalDataAccessAdvisor;
 import com.iambilotta.gdpr.starter.audit.Slf4jAuditSink;
@@ -122,6 +123,20 @@ public class GdprAutoConfiguration {
             return true;
         } catch (ClassNotFoundException ex) {
             return false;
+        }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
+    public static class MetricsConfig {
+
+        @Bean
+        @ConditionalOnMissingBean
+        public AuditSinkMetrics gdprAuditSinkMetrics(AuditSink sink) {
+            if (sink instanceof AsyncAuditSinkDecorator decorator) {
+                return new AuditSinkMetrics(decorator);
+            }
+            return null;
         }
     }
 

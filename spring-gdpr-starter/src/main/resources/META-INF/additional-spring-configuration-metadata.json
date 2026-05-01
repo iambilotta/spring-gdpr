@@ -1,0 +1,132 @@
+{
+  "groups": [
+    {
+      "name": "spring.gdpr",
+      "type": "com.iambilotta.gdpr.starter.GdprProperties",
+      "description": "spring-gdpr starter: GDPR compliance-by-annotation. Audit log, retention enforcement, right-to-erasure, audit-access REST."
+    },
+    {
+      "name": "spring.gdpr.audit",
+      "type": "com.iambilotta.gdpr.starter.GdprProperties$Audit",
+      "description": "Audit-log persistence. Default sink is SLF4J. Enable JDBC for the Art. 15 right-of-access endpoint."
+    },
+    {
+      "name": "spring.gdpr.audit.async",
+      "type": "com.iambilotta.gdpr.starter.GdprProperties$Async",
+      "description": "Async-decorator config. ON by default. Drop-newest under saturation, observable via dropped_total counter."
+    },
+    {
+      "name": "spring.gdpr.retention",
+      "type": "com.iambilotta.gdpr.starter.GdprProperties$Retention",
+      "description": "Retention enforcement (Art. 5(1)(e)). Cron-driven sweep over registered RetentionTarget beans."
+    },
+    {
+      "name": "spring.gdpr.erasure",
+      "type": "com.iambilotta.gdpr.starter.GdprProperties$Erasure",
+      "description": "Right-to-erasure flow (Art. 17). Delegates to registered ErasureHandler beans in declared order."
+    },
+    {
+      "name": "spring.gdpr.web",
+      "type": "com.iambilotta.gdpr.starter.GdprProperties$Web",
+      "description": "REST surface (/gdpr/erasure, /gdpr/audit/access). Wire Spring Security around the configured base-path."
+    }
+  ],
+  "properties": [
+    {
+      "name": "spring.gdpr.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Master switch. When false, no advisor, scheduler, or REST endpoint is registered.",
+      "defaultValue": true
+    },
+    {
+      "name": "spring.gdpr.audit.jdbc-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Persist audit records to a JDBC table (instead of SLF4J only). Required for the Art. 15 right-of-access endpoint.",
+      "defaultValue": false
+    },
+    {
+      "name": "spring.gdpr.audit.table",
+      "type": "java.lang.String",
+      "description": "Database table for audit log. Must match the migration script (default 'gdpr_audit_access'). Whitelist-validated, only [A-Za-z_][A-Za-z0-9_]* accepted.",
+      "defaultValue": "gdpr_audit_access"
+    },
+    {
+      "name": "spring.gdpr.audit.auto-create-schema",
+      "type": "java.lang.Boolean",
+      "description": "Dev-only shortcut. When true, JdbcAuditSink issues CREATE TABLE IF NOT EXISTS on first use. Production deployments must apply the bundled migration via Flyway/Liquibase instead.",
+      "defaultValue": false
+    },
+    {
+      "name": "spring.gdpr.audit.async.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Wrap the audit sink with AsyncAuditSinkDecorator. Production deployments should never block the request thread on audit I/O.",
+      "defaultValue": true
+    },
+    {
+      "name": "spring.gdpr.audit.async.thread-count",
+      "type": "java.lang.Integer",
+      "description": "Worker thread count. Default 1 fits most log-aggregation and indexed JDBC workloads.",
+      "defaultValue": 1
+    },
+    {
+      "name": "spring.gdpr.audit.async.queue-capacity",
+      "type": "java.lang.Integer",
+      "description": "Bounded queue capacity. Drop-newest under saturation, observable via dropped_total counter and WARN logs.",
+      "defaultValue": 1024
+    },
+    {
+      "name": "spring.gdpr.audit.async.await-millis",
+      "type": "java.lang.Long",
+      "description": "Milliseconds to wait for the executor to drain on shutdown before forcing termination.",
+      "defaultValue": 5000
+    },
+    {
+      "name": "spring.gdpr.retention.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether the retention scheduler runs. Disable to defer enforcement to a batch job.",
+      "defaultValue": true
+    },
+    {
+      "name": "spring.gdpr.retention.cron",
+      "type": "java.lang.String",
+      "description": "Cron expression for the retention sweep. Default: every day at 03:00.",
+      "defaultValue": "0 0 3 * * *"
+    },
+    {
+      "name": "spring.gdpr.erasure.rest-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether the DELETE /gdpr/erasure/{subjectId} REST endpoint is exposed.",
+      "defaultValue": true
+    },
+    {
+      "name": "spring.gdpr.web.base-path",
+      "type": "java.lang.String",
+      "description": "Base path for spring-gdpr REST endpoints. Wire Spring Security rules around <base-path>/**.",
+      "defaultValue": "/gdpr"
+    }
+  ],
+  "hints": [
+    {
+      "name": "spring.gdpr.audit.table",
+      "values": [
+        {
+          "value": "gdpr_audit_access",
+          "description": "Default table name, matches the bundled Flyway migration V1__gdpr_audit_access.sql."
+        }
+      ]
+    },
+    {
+      "name": "spring.gdpr.retention.cron",
+      "values": [
+        {
+          "value": "0 0 3 * * *",
+          "description": "Default. Every day at 03:00."
+        },
+        {
+          "value": "0 0 */6 * * *",
+          "description": "Every 6 hours. Use for high-volume retention with short cutoffs."
+        }
+      ]
+    }
+  ]
+}
