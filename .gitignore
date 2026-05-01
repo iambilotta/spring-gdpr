@@ -1,0 +1,22 @@
+target/
+*/target/
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+hs_err_pid*
+
+# Generated GDPR artifacts (keep dpia.md/ropa.csv outside generated-sources if you commit them)
+generated-sources/spring.gdpr/

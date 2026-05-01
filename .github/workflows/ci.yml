@@ -1,0 +1,36 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: set up jdk 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: build and test
+        run: mvn -B -ntp verify
+
+      - name: assert dpia + ropa exist
+        run: |
+          test -f spring-gdpr-starter-test/target/generated-sources/annotations/spring/gdpr/ropa.csv
+          test -f spring-gdpr-starter-test/target/generated-sources/annotations/spring/gdpr/dpia.md
+
+      - name: upload generated artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spring-gdpr-evidence
+          path: spring-gdpr-starter-test/target/generated-sources/annotations/spring/gdpr/
+          if-no-files-found: warn
