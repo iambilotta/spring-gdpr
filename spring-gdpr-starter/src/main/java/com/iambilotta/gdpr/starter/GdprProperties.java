@@ -46,9 +46,19 @@ public class GdprProperties {
         private boolean jdbcEnabled = false;
 
         /**
-         * Database table for audit log. Schema is bootstrapped on first run if missing.
+         * Database table for audit log. The schema must exist before the JDBC sink starts;
+         * apply the migration shipped at {@code db/migration/V1__gdpr_audit_access.sql}
+         * (Flyway) or {@code db/changelog/spring-gdpr-changelog.xml} (Liquibase) via
+         * your existing migration tool.
          */
         private String table = "gdpr_audit_access";
+
+        /**
+         * Dev-only shortcut. When true, the JDBC sink issues
+         * {@code CREATE TABLE IF NOT EXISTS} on first use. Default false: in production,
+         * use Flyway / Liquibase / your tool of choice.
+         */
+        private boolean autoCreateSchema = false;
 
         private final Async async = new Async();
 
@@ -66,6 +76,14 @@ public class GdprProperties {
 
         public void setTable(String table) {
             this.table = table;
+        }
+
+        public boolean isAutoCreateSchema() {
+            return autoCreateSchema;
+        }
+
+        public void setAutoCreateSchema(boolean autoCreateSchema) {
+            this.autoCreateSchema = autoCreateSchema;
         }
 
         public Async getAsync() {

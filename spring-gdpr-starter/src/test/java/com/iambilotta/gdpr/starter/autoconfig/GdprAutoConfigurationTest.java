@@ -37,6 +37,7 @@ class GdprAutoConfigurationTest {
         runner
                 .withPropertyValues(
                         "spring.gdpr.audit.jdbc-enabled=true",
+                        "spring.gdpr.audit.auto-create-schema=true",
                         "spring.datasource.url=jdbc:h2:mem:autoconfig-test;DB_CLOSE_DELAY=-1",
                         "spring.datasource.username=sa",
                         "spring.datasource.password=")

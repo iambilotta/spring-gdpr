@@ -28,7 +28,7 @@ class JdbcAuditSinkTest {
 
     @Test
     void writeAndQueryRoundTrip() {
-        JdbcAuditSink sink = new JdbcAuditSink(dataSource, "gdpr_audit_access");
+        JdbcAuditSink sink = new JdbcAuditSink(dataSource, "gdpr_audit_access", true);
 
         Instant t0 = Instant.parse("2030-01-01T10:00:00Z");
         Instant t1 = Instant.parse("2030-01-01T10:05:00Z");
@@ -48,7 +48,7 @@ class JdbcAuditSinkTest {
 
     @Test
     void filtersByTimeWindow() {
-        JdbcAuditSink sink = new JdbcAuditSink(dataSource, "gdpr_audit_access");
+        JdbcAuditSink sink = new JdbcAuditSink(dataSource, "gdpr_audit_access", true);
         sink.write(record("old", Instant.parse("2025-01-01T00:00:00Z"), "x", "T", "m", "6(1)(a)", false));
         sink.write(record("new", Instant.parse("2030-01-01T00:00:00Z"), "x", "T", "m", "6(1)(a)", false));
 
@@ -63,19 +63,36 @@ class JdbcAuditSinkTest {
 
     @Test
     void rejectsTableNamesThatLookLikeSqlInjection() {
-        assertThatThrownBy(() -> new JdbcAuditSink(dataSource, "audit; DROP TABLE users"))
+        assertThatThrownBy(() -> new JdbcAuditSink(dataSource, "audit; DROP TABLE users", true))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new JdbcAuditSink(dataSource, "audit-1"))
+        assertThatThrownBy(() -> new JdbcAuditSink(dataSource, "audit-1", true))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void schemaIsIdempotent() {
-        JdbcAuditSink first = new JdbcAuditSink(dataSource, "gdpr_audit_access");
-        JdbcAuditSink second = new JdbcAuditSink(dataSource, "gdpr_audit_access");
+        JdbcAuditSink first = new JdbcAuditSink(dataSource, "gdpr_audit_access", true);
+        JdbcAuditSink second = new JdbcAuditSink(dataSource, "gdpr_audit_access", true);
 
         second.write(record("after-second-bootstrap", Instant.now(), "x", "T", "m", "6(1)(a)", false));
         assertThat(first.findBySubject("x", null, null)).hasSize(1);
+    }
+
+    @Test
+    void failsFastWhenTableMissingAndAutoCreateOff() {
+        assertThatThrownBy(() -> new JdbcAuditSink(dataSource, "gdpr_audit_access", false))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("not present")
+                .hasMessageContaining("V1__gdpr_audit_access.sql");
+    }
+
+    @Test
+    void worksWhenTableExistsAndAutoCreateOff() {
+        new JdbcAuditSink(dataSource, "gdpr_audit_access", true);
+        JdbcAuditSink secondInstance = new JdbcAuditSink(dataSource, "gdpr_audit_access", false);
+
+        secondInstance.write(record("e1", Instant.now(), "alice", "T", "m", "6(1)(a)", false));
+        assertThat(secondInstance.findBySubject("alice", null, null)).hasSize(1);
     }
 
     private static AuditAccessRecord record(

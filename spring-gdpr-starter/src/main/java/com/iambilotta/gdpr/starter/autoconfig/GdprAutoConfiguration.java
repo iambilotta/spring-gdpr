@@ -95,7 +95,10 @@ public class GdprAutoConfiguration {
                             + "Falling back to Slf4jAuditSink. Configure spring.datasource.* or supply a DataSource bean.");
             return new Slf4jAuditSink();
         }
-        return new JdbcAuditSink(dataSource, properties.getAudit().getTable());
+        return new JdbcAuditSink(
+                dataSource,
+                properties.getAudit().getTable(),
+                properties.getAudit().isAutoCreateSchema());
     }
 
     @Bean
