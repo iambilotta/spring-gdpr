@@ -10,6 +10,8 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.iambilotta.gdpr.annotations.GdprLegalBasis;
 import com.iambilotta.gdpr.annotations.GdprPersonalData;
@@ -25,6 +27,8 @@ import com.iambilotta.gdpr.annotations.GdprPersonalData;
  */
 @Aspect
 public class PersonalDataAccessAdvisor {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PersonalDataAccessAdvisor.class);
 
     private final AuditSink sink;
     private final ActorResolver actorResolver;
@@ -62,7 +66,14 @@ public class PersonalDataAccessAdvisor {
                 legalBasisRef,
                 specialCategory
         );
-        sink.write(record);
+        try {
+            sink.write(record);
+        } catch (RuntimeException ex) {
+            LOG.error(
+                    "spring-gdpr audit sink threw on write for event_id={} type={} member={}: {}. "
+                            + "Business method continues. Wrap your sink with AsyncAuditSinkDecorator to absorb sink failures off the request thread.",
+                    record.eventId(), record.targetType(), record.targetMember(), ex.toString());
+        }
     }
 
     private static GdprPersonalData pickPersonalData(Method method, Class<?> declaring) {
