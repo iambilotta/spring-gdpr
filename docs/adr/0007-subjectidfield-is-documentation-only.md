@@ -33,3 +33,13 @@ A future v2 may sunset this property in favour of a typed `subjectId()` referenc
 **Remove the property, force adopters to declare the column elsewhere (XML, DPIA-yaml).** Reintroduces the drift problem the library exists to solve.
 
 **Make the property drive the lookup.** A reflection-driven path forces the library to know the persistence shape (JPA entity, JDBC POJO, Mongo document), which contradicts ADR-0004's decision to keep `ErasureHandler` as a user-owned method.
+
+## Why this matters
+
+The principle is "annotation properties surface in audits, they do not drive runtime". `subjectIdField` exists because a DPO running an audit needs to know which column links a record to a subject; that information belongs in the DPIA. Driving the lookup off it would force the library into a persistence-aware shape (JPA reflection, etc) that ADR-0004 explicitly rejected. Keeping the property and clarifying its semantic is cheaper than renaming.
+
+## References
+
+- Annotation: `spring-gdpr-annotations/src/main/java/.../GdprErasable.java`.
+- Resolver: `SubjectIdResolver` SPI in `spring-gdpr-starter/src/main/java/.../audit/`.
+- Javadoc clarification shipped in the v1.1.0 release.

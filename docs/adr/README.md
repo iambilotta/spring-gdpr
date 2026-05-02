@@ -13,6 +13,7 @@ The point is honesty: a future contributor (or future me) can re-evaluate a deci
 - [ADR-0005](0005-retention-via-spring-scheduled.md): Retention sweep via `@Scheduled`, configurable cron.
 - [ADR-0006](0006-typed-class-on-spi.md): `ErasureHandler.entityType()` returns `Class<?>`.
 - [ADR-0007](0007-subjectidfield-is-documentation-only.md): `@GdprErasable.subjectIdField` is documentation, not a runtime lookup driver.
+- [ADR-0008](0008-consent-and-portability-deferred.md) [proposed]: Article 7 consent management and Article 20 portability deferred to a future minor.
 
 ## How to add an ADR
 

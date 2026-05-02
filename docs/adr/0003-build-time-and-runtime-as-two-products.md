@@ -31,3 +31,12 @@ Adopters wire only what they need. The README "Two products, one source of truth
 **Single monolithic dependency.** Rejected because forcing the runtime starter on adopters who only need DPIA generation is a friction point that costs more than the maintenance overhead of two artifacts.
 
 **Single dependency with optional auto-configuration.** Rejected because Spring Boot's auto-config still pulls the runtime classes onto the classpath even when disabled by property; the dependency tree stays heavy.
+
+## Why this matters
+
+A library that forces "all or nothing" loses the adopter who only wants half. Splitting the artifacts is a one-time maintenance cost; gluing them together is a permanent friction tax on every adopter who reads the dependency tree. The principle generalises: ship the smallest dependency surface that still produces value.
+
+## References
+
+- Module split: `spring-gdpr-annotations` (zero deps), `spring-gdpr-processor` (build-time only), `spring-gdpr-starter` (runtime).
+- Both halves consume `spring-gdpr-annotations` so semantics never drift between APT and AOP advisor.

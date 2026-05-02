@@ -34,3 +34,13 @@ The `AsyncAuditSinkDecorator` wraps the user-provided `AuditSink` bean transpare
 **Async with unbounded queue.** Rejected because OOM under load is harder to debug than an observable drop counter.
 
 **Drop-oldest instead of drop-newest.** A coin toss in theory. Drop-newest preserves the older audit chain (which is usually what an audit looks at: yesterday's events, not the events from the last second). Drop-oldest would silently rotate out historical evidence.
+
+## Why this matters
+
+The principle is "audit must not become the latency tax". An adopter who sees their p99 double after wiring our advisor reverts the dependency the same week and never comes back. Async-by-default is the only choice that lets a Spring Boot service running 100+ req/sec adopt the library without a configuration debate. Zero-loss is opt-in, not default, because the cost of forcing it on everyone is higher than the cost of an observable drop counter.
+
+## References
+
+- `AsyncAuditSinkDecorator` in `spring-gdpr-starter/src/main/java/.../audit/`.
+- Micrometer counters: `spring.gdpr.audit.submitted`, `spring.gdpr.audit.dropped`, `spring.gdpr.audit.failed`.
+- Reality-check table in the README documents the saturation behaviour explicitly.

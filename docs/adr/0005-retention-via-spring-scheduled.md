@@ -33,3 +33,13 @@ Adopters who prefer external scheduling set `spring.gdpr.retention.enabled=false
 **Quartz integration.** Rejected as over-engineering for v1. Spring `@Scheduled` is built-in and good enough for the common case; adopters who already run Quartz configure their own trigger.
 
 **ShedLock bundled.** Rejected for v1: it imposes a database table on every adopter even single-pod ones. Documented as the multi-pod recipe; adopters who need it pull it in themselves.
+
+## Why this matters
+
+The principle is "the smallest infra dependency that still gets the job done". Adding Quartz, ShedLock, or a dedicated cron container is reasonable for some adopters but not for the median Spring Boot service. By defaulting to `@Scheduled` we cover the 80% case with zero extra moving parts; multi-pod deployments still get a documented recipe instead of a hidden gotcha.
+
+## References
+
+- `RetentionScheduler` and `RetentionTarget` SPI in `spring-gdpr-starter/src/main/java/.../retention/`.
+- Cron property: `spring.gdpr.retention.cron`. Tests in `RetentionSchedulerTest`.
+- Multi-pod note: README "Reality check" + future ADR on ShedLock if a real adopter brings the requirement.

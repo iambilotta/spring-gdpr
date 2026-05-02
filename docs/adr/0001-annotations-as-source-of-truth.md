@@ -6,9 +6,9 @@
 
 ## Context
 
-GDPR Articles 30 (ROPA) and 35 (DPIA) require the controller to keep an up-to-date description of every processing activity touching personal data: data subjects, lawful basis, retention, special category flag, related access points. In every audit I have walked into, the same failure mode shows up: a `DPIA-2024-Q3.docx` shared from a colleague who left, describing an architecture that no longer exists. The information was always already in the codebase. The tooling was missing.
+A DPO walking into a GDPR audit needs three artefacts: an Article 30 ROPA, an Article 35 DPIA scaffold, and a defensible answer to "where in your stack does each item live". The first two are documents. The third is the gating question, and where every implementation we have seen falls down: the library that wins is the one whose answer to "where does each ROPA row come from" is "this Java class, that field, this commit".
 
-Three places could conceivably hold this metadata: a YAML config file shipped with the app, a SaaS dashboard configured by humans, or annotations on the entity classes themselves.
+Concretely the data the DPO needs (data-subject categories, lawful basis under Article 6/9/10, retention period, erasure strategy, the FK column that links a record to a subject) has to live somewhere the engineering team already maintains. The realistic candidates are a YAML config under `resources/`, a SaaS governance dashboard, or annotations on the JPA entity itself.
 
 ## Decision
 
@@ -30,3 +30,13 @@ Concretely the five annotations (`@GdprPersonalData`, `@GdprDataSubjects`, `@Gdp
 **SaaS dashboard (OneTrust, Privitar) with the schema kept in their UI.** Adopters pay 25k EUR/year and onboarding cycles, audit data leaves the company, and the dashboard inevitably drifts from what the application actually does. Net negative for our target.
 
 **XML descriptors on the Spring bean side.** Spring has moved past XML config for ten years; there is no audience for "let me write a `<gdpr-personal-data field='email' />`".
+
+## Why this matters
+
+The principle is "the code is the audit-evidence baseline". Every later decision (where to log access, how erasure is orchestrated, when retention runs) defers to it. If a future feature would force the DPO to maintain a separate file, that feature is wrong-shaped. The DPO's hour-long review against the regenerated DPIA is the load-bearing UX of the entire library.
+
+## References
+
+- The five `@Gdpr*` annotations live in `spring-gdpr-annotations/` (zero runtime deps so the module is safe to import from any layer).
+- The annotation processor that turns them into ROPA + DPIA is `spring-gdpr-processor/`. Output goes to `target/generated-sources/annotations/spring/gdpr/`.
+- See `git log --oneline -- spring-gdpr-annotations/src/main/java` for the iteration on the annotation surface before v0.1.0.

@@ -36,3 +36,13 @@ The `DELETE /gdpr/erasure/{subjectId}` REST endpoint returns the per-handler agg
 **Single user-provided "erase everything" bean.** Rejected because it gives up the per-type audit row, which is exactly what an Article 17 review wants to see.
 
 **Auto-discovered Spring Data repositories.** Rejected for the same reason as reflection-driven: it traps the library in a JPA-only world and gives up anonymize semantics.
+
+## Why this matters
+
+The principle is "the library knows orchestration; the application knows the data". Reflection-driven cascades work on slide decks and break the moment a real adopter has Mongo, Redis, or an external CRM. By making `ErasureHandler` user-owned we trade some adopter typing for a library that survives every persistence shape. Article 17 audits care about evidence that the right tables were touched; they do not care that the library walked them automatically.
+
+## References
+
+- `ErasureHandler` SPI: `spring-gdpr-starter/src/main/java/.../erasure/`.
+- `ErasureService` orchestrator: same package. Tests in `spring-gdpr-starter/src/test/java/.../erasure/ErasureServiceTest.java`.
+- Demo handler (single-table delete): see `examples/quickstart-postgres/.../CustomerErasureHandler.java`.
