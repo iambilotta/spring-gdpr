@@ -36,7 +36,7 @@ jobs:
 
       - name: upload generated artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: spring-gdpr-evidence
           path: spring-gdpr-starter-test/target/generated-sources/annotations/spring/gdpr/
@@ -44,7 +44,7 @@ jobs:
 
       - name: upload jacoco aggregate report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-jacoco-aggregate
           path: spring-gdpr-starter-test/target/site/jacoco-aggregate/
