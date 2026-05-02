@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you reference this library in a paper, blog post, or talk, please cite it like so."
+title: "spring-gdpr: GDPR compliance, generated from your annotations"
+abstract: >
+  A Spring Boot starter and Java annotation processor that turn @Gdpr* annotations
+  on domain types into the GDPR evidence pack: Article 30 ROPA in CSV, Article 35
+  DPIA scaffold in Markdown, a runtime audit log of personal-data accesses
+  (Article 15 export), a right-to-erasure REST flow (Article 17), and a scheduled
+  retention sweep (Article 5(1)(e)). Apache 2.0, no SaaS, evidence stays on your infra.
+type: software
+version: "1.1.0"
+date-released: 2026-05-02
+license: Apache-2.0
+repository-code: "https://github.com/iambilotta/spring-gdpr"
+url: "https://github.com/iambilotta/spring-gdpr"
+keywords:
+  - gdpr
+  - compliance
+  - data-protection
+  - dpia
+  - ropa
+  - spring-boot
+  - annotation-driven
+  - evidence-as-code
+authors:
+  - given-names: Francesco
+    family-names: Bilotta
+    email: francesco@iambilotta.com
+    website: "https://iambilotta.com"
