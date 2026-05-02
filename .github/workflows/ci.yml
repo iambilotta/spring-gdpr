@@ -41,3 +41,20 @@ jobs:
           name: spring-gdpr-evidence
           path: spring-gdpr-starter-test/target/generated-sources/annotations/spring/gdpr/
           if-no-files-found: warn
+
+      - name: upload jacoco aggregate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-jacoco-aggregate
+          path: spring-gdpr-starter-test/target/site/jacoco-aggregate/
+          if-no-files-found: warn
+
+      - name: generate coverage badge
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: cicirello/jacoco-badge-generator@v2
+        with:
+          jacoco-csv-file: spring-gdpr-starter-test/target/site/jacoco-aggregate/jacoco.csv
+          coverage-badge-filename: jacoco.svg
+          generate-coverage-badge: true
+          badges-directory: .github/badges
