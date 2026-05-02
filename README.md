@@ -160,7 +160,7 @@ flowchart LR
 <dependency>
   <groupId>com.github.iambilotta.spring-gdpr</groupId>
   <artifactId>spring-gdpr-starter</artifactId>
-  <version>v1.0.0</version>
+  <version>v1.1.0</version>
 </dependency>
 ```
 
@@ -175,7 +175,7 @@ flowchart LR
       <path>
         <groupId>com.github.iambilotta.spring-gdpr</groupId>
         <artifactId>spring-gdpr-processor</artifactId>
-        <version>v1.0.0</version>
+        <version>v1.1.0</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -198,7 +198,7 @@ classpath:db/migration/V1__gdpr_audit_access.sql
 <plugin>
   <groupId>com.github.iambilotta.spring-gdpr</groupId>
   <artifactId>spring-gdpr-maven-plugin</artifactId>
-  <version>v1.0.0</version>
+  <version>v1.1.0</version>
   <executions><execution><goals><goal>verify</goal></goals></execution></executions>
 </plugin>
 ```

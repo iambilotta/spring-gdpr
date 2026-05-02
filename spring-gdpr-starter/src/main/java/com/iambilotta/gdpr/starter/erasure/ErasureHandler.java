@@ -11,7 +11,16 @@ import com.iambilotta.gdpr.annotations.GdprErasable;
  */
 public interface ErasureHandler {
 
-    String entityType();
+    /**
+     * The domain type this handler erases for. Used as the key under
+     * {@code affectedByType} in the {@code DELETE /gdpr/erasure/{subjectId}}
+     * response and in the audit row {@code targetType} field.
+     *
+     * <p>Returning {@link Class} instead of a free-form FQN string keeps the
+     * coupling to the type system: a typo or a renamed class fails at compile
+     * time, not at audit-export time.
+     */
+    Class<?> entityType();
 
     GdprErasable.Strategy strategy();
 

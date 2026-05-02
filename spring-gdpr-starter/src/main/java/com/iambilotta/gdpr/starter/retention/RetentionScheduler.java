@@ -44,7 +44,7 @@ public class RetentionScheduler {
             if (affected > 0) {
                 LOG.info(
                         "gdpr_retention applied entity={} strategy={} cutoff={} affected={}",
-                        target.entityType(),
+                        target.entityType().getName(),
                         target.strategy(),
                         cutoff,
                         affected
