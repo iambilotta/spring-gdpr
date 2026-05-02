@@ -10,7 +10,24 @@ by area: **Annotations**, **Runtime**, **Build-time**, **DX**, **Migrations**,
 
 ## [Unreleased]
 
-(no changes yet on top of v0.1.1)
+_No changes yet._
+
+## [1.0.0] - 2026-05-02
+
+First stable release. API freeze for the five `@Gdpr*` annotations, the
+`AuditSink` / `ErasureHandler` / `RetentionTarget` / `ActorResolver` SPIs,
+the `spring.gdpr.*` configuration properties and the `/gdpr/**` REST shape.
+
+JitPack coordinates: `com.github.iambilotta.spring-gdpr:spring-gdpr-starter:v1.0.0`.
+
+### Docs
+- README rewritten to open with a `Without spring-gdpr / With spring-gdpr`
+  framing, to introduce the build-time generator and the runtime starter as
+  two separately adoptable halves, and to put the right-to-erasure caveat
+  upfront (the library does not magically purge tables; it orders
+  `ErasureHandler` beans, audits each call, returns 207 Multi-Status).
+- Roadmap collapsed: v1.0 is the current shipping surface; future scope
+  reframed as "future minor" rather than fictional version numbers.
 
 ## [0.1.1] - 2026-05-01
 

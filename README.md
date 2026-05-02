@@ -160,7 +160,7 @@ flowchart LR
 <dependency>
   <groupId>com.github.iambilotta.spring-gdpr</groupId>
   <artifactId>spring-gdpr-starter</artifactId>
-  <version>v0.1.1</version>
+  <version>v1.0.0</version>
 </dependency>
 ```
 
@@ -175,7 +175,7 @@ flowchart LR
       <path>
         <groupId>com.github.iambilotta.spring-gdpr</groupId>
         <artifactId>spring-gdpr-processor</artifactId>
-        <version>v0.1.1</version>
+        <version>v1.0.0</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -198,7 +198,7 @@ classpath:db/migration/V1__gdpr_audit_access.sql
 <plugin>
   <groupId>com.github.iambilotta.spring-gdpr</groupId>
   <artifactId>spring-gdpr-maven-plugin</artifactId>
-  <version>v0.1.1</version>
+  <version>v1.0.0</version>
   <executions><execution><goals><goal>verify</goal></goals></execution></executions>
 </plugin>
 ```
@@ -339,10 +339,10 @@ A library that pretends to do everything is a library you cannot trust. Here is 
 
 | Version | Scope |
 |---|---|
-| v0.1 | annotations, AOP advisor, async sink, REST, retention, DPIA + ROPA generator |
-| v0.2 | consent management (Art. 7), data portability export (Art. 20) |
-| v0.3 | cross-border transfer (Art. 44+), SCC scaffold |
-| v1.0 | API freeze, performance hardening, multi-tenant audit table, Maven Central in addition to JitPack |
+| v1.0 (current, May 2026) | API freeze: annotations, AOP advisor, async sink, REST endpoints (Art. 15, Art. 17), retention sweep, DPIA + ROPA generators. JitPack distribution. |
+| Future minor | Consent management (Art. 7), data portability export (Art. 20). |
+| Future minor | Cross-border transfer (Art. 44+), SCC scaffold. |
+| Future minor | Multi-tenant audit table; Maven Central in addition to JitPack. |
 
 ## About
 
