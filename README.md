@@ -138,7 +138,7 @@ The runtime advisor reads the same `@Gdpr*` annotations the build-time processor
 
 ## Quick start
 
-Distributed via [JitPack](https://jitpack.io/#iambilotta/spring-gdpr) (see [ADR-0005-equivalent on aiact](https://github.com/iambilotta/spring-aiact/blob/main/docs/adr/0005-jitpack-distribution-v1.md) for the rationale; the gdpr side mirrors it).
+Distributed via [JitPack](https://jitpack.io/#iambilotta/spring-gdpr). **Maven Central is deliberately not planned**: this repo is a reference / portfolio asset of the maintainer, not a commercially supported product, and Maven Central imposes a permanent release-pipeline tax (immutable releases, GPG key custody, Sonatype workflows) that is only worth paying once an adopter explicitly requires it. See the sister ADR-0005 on [spring-aiact](https://github.com/iambilotta/spring-aiact/blob/main/docs/adr/0005-jitpack-distribution-v1.md) for the full rationale; the gdpr side mirrors it.
 
 **1. Add the JitPack repository:**
 
@@ -356,8 +356,10 @@ What the library is NOT:
 |---|---|
 | v1.1 (current, May 2026) | API freeze: 5 annotations, AOP advisor, async sink, REST, retention, DPIA + ROPA generators. JitPack distribution |
 | Future minor | Article 7 consent, Article 20 portability ([ADR-0008](docs/adr/0008-consent-and-portability-deferred.md)) |
-| Future minor | ShedLock recipe for multi-pod retention; Maven Central in addition to JitPack |
+| Future minor | ShedLock recipe for multi-pod retention |
 | Future minor | Cross-border transfer (Art. 44+), SCC scaffold |
+
+**On distribution:** Maven Central is **not** on the roadmap and is unlikely to be added unless a real adopter explicitly requires it. This repo is a reference / portfolio asset of the maintainer, not a commercial product; the cost of maintaining a Maven Central release pipeline (GPG key custody, immutable releases, Sonatype workflow) is permanent and only worth paying when there is concrete adopter demand. JitPack covers the consumer use case at zero ongoing maintenance cost.
 
 ## Module map
 
