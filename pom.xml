@@ -44,6 +44,7 @@
         <module>spring-gdpr-processor</module>
         <module>spring-gdpr-maven-plugin</module>
         <module>spring-gdpr-starter-test</module>
+        <module>spring-gdpr-benchmark</module>
     </modules>
 
     <properties>

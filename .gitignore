@@ -20,3 +20,6 @@ hs_err_pid*
 
 # Generated GDPR artifacts (keep dpia.md/ropa.csv outside generated-sources if you commit them)
 generated-sources/spring.gdpr/
+
+# maven-shade-plugin artifacts
+**/dependency-reduced-pom.xml
