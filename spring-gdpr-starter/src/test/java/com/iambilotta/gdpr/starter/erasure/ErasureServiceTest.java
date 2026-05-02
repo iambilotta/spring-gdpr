@@ -12,23 +12,30 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ErasureServiceTest {
 
+    static class Address {}
+    static class Customer {}
+    static class Invoice {}
+
     @Test
     void invokesHandlersInOrderAscending() {
         List<String> invocationOrder = new ArrayList<>();
-        FakeHandler addresses = new FakeHandler("Address", 50, invocationOrder, 0);
-        FakeHandler customers = new FakeHandler("Customer", 100, invocationOrder, 0);
-        FakeHandler invoices = new FakeHandler("Invoice", 25, invocationOrder, 0);
+        FakeHandler addresses = new FakeHandler(Address.class, 50, invocationOrder, 0);
+        FakeHandler customers = new FakeHandler(Customer.class, 100, invocationOrder, 0);
+        FakeHandler invoices = new FakeHandler(Invoice.class, 25, invocationOrder, 0);
 
         ErasureService service = new ErasureService(List.of(addresses, customers, invoices));
         service.eraseSubject("subject-x");
 
-        assertThat(invocationOrder).containsExactly("Invoice", "Address", "Customer");
+        assertThat(invocationOrder).containsExactly(
+                Invoice.class.getName(),
+                Address.class.getName(),
+                Customer.class.getName());
     }
 
     @Test
     void aggregatesAffectedCountsByType() {
-        FakeHandler customers = new FakeHandler("Customer", 100, new ArrayList<>(), 1);
-        FakeHandler invoices = new FakeHandler("Invoice", 50, new ArrayList<>(), 3);
+        FakeHandler customers = new FakeHandler(Customer.class, 100, new ArrayList<>(), 1);
+        FakeHandler invoices = new FakeHandler(Invoice.class, 50, new ArrayList<>(), 3);
 
         ErasureService service = new ErasureService(List.of(customers, invoices));
         ErasureReport report = service.eraseSubject("subject-x");
@@ -36,8 +43,8 @@ class ErasureServiceTest {
         assertThat(report.subjectId()).isEqualTo("subject-x");
         assertThat(report.totalAffected()).isEqualTo(4);
         assertThat(report.affectedByType())
-                .containsEntry("Customer", 1)
-                .containsEntry("Invoice", 3);
+                .containsEntry(Customer.class.getName(), 1)
+                .containsEntry(Invoice.class.getName(), 3);
     }
 
     @Test
@@ -52,21 +59,21 @@ class ErasureServiceTest {
 
     private static final class FakeHandler implements ErasureHandler {
 
-        private final String name;
+        private final Class<?> type;
         private final int order;
         private final List<String> log;
         private final int affected;
 
-        FakeHandler(String name, int order, List<String> log, int affected) {
-            this.name = name;
+        FakeHandler(Class<?> type, int order, List<String> log, int affected) {
+            this.type = type;
             this.order = order;
             this.log = log;
             this.affected = affected;
         }
 
         @Override
-        public String entityType() {
-            return name;
+        public Class<?> entityType() {
+            return type;
         }
 
         @Override
@@ -76,7 +83,7 @@ class ErasureServiceTest {
 
         @Override
         public int erase(String subjectId) {
-            log.add(name);
+            log.add(type.getName());
             return affected;
         }
 

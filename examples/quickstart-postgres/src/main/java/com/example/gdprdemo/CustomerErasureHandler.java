@@ -15,8 +15,8 @@ public class CustomerErasureHandler implements ErasureHandler {
     }
 
     @Override
-    public String entityType() {
-        return Customer.class.getName();
+    public Class<?> entityType() {
+        return Customer.class;
     }
 
     @Override
