@@ -10,7 +10,8 @@ by area: **Annotations**, **Runtime**, **Build-time**, **DX**, **Migrations**,
 
 ## [Unreleased]
 
-_No changes yet._
+### Docs
+- Distribution policy revised: Maven Central is **not planned** for this repo. README "Quick start" and "Roadmap" sections updated to make the position explicit upfront. The framing is that this is a reference / portfolio asset, not a commercial product; the permanent maintenance cost of a Maven Central pipeline is not justified absent an adopter requiring it. Mirrors the sister decision in spring-aiact ADR-0005.
 
 ## [1.1.0] - 2026-05-02
 
