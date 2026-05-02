@@ -8,7 +8,7 @@
 [![Release](https://img.shields.io/github/v/release/iambilotta/spring-gdpr?include_prereleases&sort=semver)](https://github.com/iambilotta/spring-gdpr/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/java-21%2B-orange.svg)](https://adoptium.net/)
-[![Spring Boot](https://img.shields.io/badge/spring--boot-3.5%2B-6db33f.svg)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/spring--boot-3.5%2B%2B--%7C%7C--4.0%2B-6db33f.svg)](https://spring.io/projects/spring-boot)
 
 ```
 For:     Lead engineer (Java/Kotlin) in an EU-regulated company with a Spring Boot stack
@@ -18,7 +18,7 @@ Effort:  ~30 min to wire on a fresh Spring Boot service, ~3h to production-ready
          (Spring Security on /gdpr/**, Flyway migration applied, ErasureHandler per
          personal-data table)
 Cost:    Apache 2.0, no SaaS, no data egress, evidence stays on your infra
-Status:  v1.1.0 stable, distributed via JitPack
+Status:  v2.x active line (Spring Boot 4+), v1.x LTS line (Spring Boot 3.5+) frozen at v1.1.0. JitPack distribution.
 ```
 
 [**Quick start**](#quick-start) ·
@@ -138,7 +138,14 @@ The runtime advisor reads the same `@Gdpr*` annotations the build-time processor
 
 ## Quick start
 
-Distributed via [JitPack](https://jitpack.io/#iambilotta/spring-gdpr). **Maven Central is deliberately not planned**: this repo is a reference / portfolio asset of the maintainer, not a commercially supported product, and Maven Central imposes a permanent release-pipeline tax (immutable releases, GPG key custody, Sonatype workflows) that is only worth paying once an adopter explicitly requires it. See the sister ADR-0005 on [spring-aiact](https://github.com/iambilotta/spring-aiact/blob/main/docs/adr/0005-jitpack-distribution-v1.md) for the full rationale; the gdpr side mirrors it.
+Distributed via [JitPack](https://jitpack.io/#iambilotta/spring-gdpr). **Maven Central is deliberately not planned**: this repo is a reference / portfolio asset of the maintainer, not a commercially supported product. See the sister ADR-0005 on [spring-aiact](https://github.com/iambilotta/spring-aiact/blob/main/docs/adr/0005-jitpack-distribution-v1.md) for the full rationale.
+
+> **Dual release line.** Pin the version that matches your Spring Boot.
+>
+> | Your stack | Pin |
+> |---|---|
+> | Spring Boot 3.5+ | `v1.1.0` (LTS line, frozen, no active maintenance) |
+> | Spring Boot 4.0+ | `v2.0.0` (active line) |
 
 **1. Add the JitPack repository:**
 
@@ -154,7 +161,7 @@ Distributed via [JitPack](https://jitpack.io/#iambilotta/spring-gdpr). **Maven C
 <dependency>
   <groupId>com.github.iambilotta.spring-gdpr</groupId>
   <artifactId>spring-gdpr-starter</artifactId>
-  <version>v1.1.0</version>
+  <version>v2.0.0</version>
 </dependency>
 ```
 
@@ -169,7 +176,7 @@ Distributed via [JitPack](https://jitpack.io/#iambilotta/spring-gdpr). **Maven C
       <path>
         <groupId>com.github.iambilotta.spring-gdpr</groupId>
         <artifactId>spring-gdpr-processor</artifactId>
-        <version>v1.1.0</version>
+        <version>v2.0.0</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
