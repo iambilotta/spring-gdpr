@@ -12,6 +12,33 @@ by area: **Annotations**, **Runtime**, **Build-time**, **DX**, **Migrations**,
 
 _No changes yet._
 
+## [1.1.0] - 2026-05-02
+
+API cleanup release. No new features. Sharpens the SPI surface that 1.0.0 froze
+where a senior code review surfaced smells worth fixing before the first
+external adopter.
+
+### Changed (BREAKING for SPI implementers, not for application users)
+- **`ErasureHandler.entityType()` now returns `Class<?>` instead of `String`.**
+  Implementations change from `return Customer.class.getName();` to
+  `return Customer.class;`. Wire format unchanged: the
+  `DELETE /gdpr/erasure/{subjectId}` response still maps `affectedByType` keys
+  to the type's fully qualified name (Jackson serialises `Class<?>` map keys
+  as FQN strings).
+- **`RetentionTarget.entityType()` now returns `Class<?>` instead of `String`.**
+  Same migration as above. Used in retention sweep logs only, no wire impact.
+
+Why: the previous String FQN coupling was stringly-typed. A renamed entity
+slipped through to the audit row at runtime instead of failing at compile
+time. Returning `Class<?>` puts the contract on the type system.
+
+### Docs
+- `@GdprErasable.subjectIdField` Javadoc now states explicitly that the value
+  is documentation surfaced in the DPIA, not a runtime lookup driver. Adopters
+  who wanted custom subject-id resolution were already supposed to override the
+  `SubjectIdResolver` bean; this is now documented at the annotation level
+  instead of being buried in the README's "Reality check" section.
+
 ## [1.0.0] - 2026-05-02
 
 First stable release. API freeze for the five `@Gdpr*` annotations, the

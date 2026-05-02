@@ -32,10 +32,11 @@ public class ErasureService {
         Map<String, Integer> affectedByType = new LinkedHashMap<>();
         for (ErasureHandler handler : handlers) {
             int affected = handler.erase(subjectId);
-            affectedByType.put(handler.entityType(), affected);
+            String entityFqn = handler.entityType().getName();
+            affectedByType.put(entityFqn, affected);
             LOG.info(
                     "gdpr_erasure entity={} strategy={} subject={} affected={}",
-                    handler.entityType(),
+                    entityFqn,
                     handler.strategy(),
                     subjectId,
                     affected
@@ -45,6 +46,6 @@ public class ErasureService {
     }
 
     public List<String> registeredTypes() {
-        return handlers.stream().map(ErasureHandler::entityType).toList();
+        return handlers.stream().map(h -> h.entityType().getName()).toList();
     }
 }

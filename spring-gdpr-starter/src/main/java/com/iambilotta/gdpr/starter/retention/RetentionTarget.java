@@ -16,9 +16,12 @@ import com.iambilotta.gdpr.annotations.GdprRetention;
 public interface RetentionTarget {
 
     /**
-     * FQN of the annotated entity. Used in logs and ROPA exports.
+     * The annotated entity class. Used in logs and ROPA exports.
+     *
+     * <p>Returning {@link Class} instead of an FQN string keeps the contract type-safe:
+     * a renamed class fails at compile time, not at retention-sweep time.
      */
-    String entityType();
+    Class<?> entityType();
 
     /**
      * Effective retention period derived from the annotation.

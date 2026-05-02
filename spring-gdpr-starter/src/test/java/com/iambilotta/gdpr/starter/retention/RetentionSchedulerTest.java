@@ -15,13 +15,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class RetentionSchedulerTest {
 
+    static class Customer {}
+    static class AccessLog {}
+    static class Anything {}
+    static class A {}
+    static class B {}
+    static class C {}
+
     @Test
     void sweepAppliesEachTargetWithCutoffDerivedFromInjectedClock() {
         Instant fixedNow = Instant.parse("2030-01-01T00:00:00Z");
         Clock clock = Clock.fixed(fixedNow, ZoneOffset.UTC);
 
-        FakeTarget customers = new FakeTarget("Customer", Duration.ofDays(365 * 5L), GdprRetention.Strategy.ANONYMIZE);
-        FakeTarget logs = new FakeTarget("AccessLog", Duration.ofDays(90), GdprRetention.Strategy.DELETE);
+        FakeTarget customers = new FakeTarget(Customer.class, Duration.ofDays(365 * 5L), GdprRetention.Strategy.ANONYMIZE);
+        FakeTarget logs = new FakeTarget(AccessLog.class, Duration.ofDays(90), GdprRetention.Strategy.DELETE);
         RetentionScheduler scheduler = new RetentionScheduler(List.of(customers, logs), clock);
 
         scheduler.sweep();
@@ -34,7 +41,7 @@ class RetentionSchedulerTest {
     void runWithOffsetUsesCallerProvidedDuration() {
         Instant fixedNow = Instant.parse("2030-06-15T12:00:00Z");
         Clock clock = Clock.fixed(fixedNow, ZoneOffset.UTC);
-        FakeTarget target = new FakeTarget("Anything", Duration.ofDays(30), GdprRetention.Strategy.DELETE);
+        FakeTarget target = new FakeTarget(Anything.class, Duration.ofDays(30), GdprRetention.Strategy.DELETE);
         RetentionScheduler scheduler = new RetentionScheduler(List.of(target), clock);
 
         scheduler.runWithOffset(Duration.ofDays(7));
@@ -45,9 +52,9 @@ class RetentionSchedulerTest {
     @Test
     void targetCountReflectsRegisteredTargets() {
         RetentionScheduler scheduler = new RetentionScheduler(List.of(
-                new FakeTarget("A", Duration.ofDays(1), GdprRetention.Strategy.DELETE),
-                new FakeTarget("B", Duration.ofDays(1), GdprRetention.Strategy.DELETE),
-                new FakeTarget("C", Duration.ofDays(1), GdprRetention.Strategy.DELETE)
+                new FakeTarget(A.class, Duration.ofDays(1), GdprRetention.Strategy.DELETE),
+                new FakeTarget(B.class, Duration.ofDays(1), GdprRetention.Strategy.DELETE),
+                new FakeTarget(C.class, Duration.ofDays(1), GdprRetention.Strategy.DELETE)
         ));
 
         assertThat(scheduler.targetCount()).isEqualTo(3);
@@ -55,20 +62,20 @@ class RetentionSchedulerTest {
 
     private static final class FakeTarget implements RetentionTarget {
 
-        private final String name;
+        private final Class<?> type;
         private final Duration period;
         private final GdprRetention.Strategy strategy;
         private final List<Instant> cutoffsObserved = new ArrayList<>();
 
-        FakeTarget(String name, Duration period, GdprRetention.Strategy strategy) {
-            this.name = name;
+        FakeTarget(Class<?> type, Duration period, GdprRetention.Strategy strategy) {
+            this.type = type;
             this.period = period;
             this.strategy = strategy;
         }
 
         @Override
-        public String entityType() {
-            return name;
+        public Class<?> entityType() {
+            return type;
         }
 
         @Override
