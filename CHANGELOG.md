@@ -10,8 +10,35 @@ by area: **Annotations**, **Runtime**, **Build-time**, **DX**, **Migrations**,
 
 ## [Unreleased]
 
+_No changes yet._
+
+## [2.0.0] - 2026-05-02
+
+First release of the **Spring Boot 4 line**. The library splits into two parallel
+release lines from this point onward (closes
+[#17](https://github.com/iambilotta/spring-gdpr/issues/17)):
+
+- **v1.x** — Spring Boot 3.5+ LTS line, frozen at v1.1.x. No new features; bug
+  fixes welcome via PR but no active maintenance commitment.
+- **v2.x** — Spring Boot 4.0+ active line. All future development happens here.
+
+### Changed (BREAKING for adopters)
+- **Minimum Spring Boot version is now 4.0+.** Adopters on Spring Boot 3.5 must
+  pin to v1.1.x; do not upgrade to v2.0.0.
+- **Imports re-homed for Spring Boot 4 module split:**
+  - `org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration` →
+    `org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration`
+- **Dependency rename:** `spring-boot-starter-aop` → `spring-boot-starter-aspectj`.
+
+### Internal
+- Test classpath additions for Spring Boot 4's split modules:
+  `spring-boot-starter-jdbc` and `h2` declared explicitly in
+  `spring-gdpr-starter-test/pom.xml` because the parent starter pom marks JDBC
+  as `optional`. No effect on adopters.
+
 ### Docs
-- Distribution policy revised: Maven Central is **not planned** for this repo. README "Quick start" and "Roadmap" sections updated to make the position explicit upfront. The framing is that this is a reference / portfolio asset, not a commercial product; the permanent maintenance cost of a Maven Central pipeline is not justified absent an adopter requiring it. Mirrors the sister decision in spring-aiact ADR-0005.
+- README: "Status" line updated to "v1.x = SB 3.5 LTS line, v2.x = SB 4 active
+  line", roadmap reflects the dual-line policy.
 
 ## [1.1.0] - 2026-05-02
 
