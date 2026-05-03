@@ -4,10 +4,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -19,9 +19,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * sink (slf4j fallback for tests, Postgres in production), erasure REST -> handler ->
  * delete -> aggregate report.
  *
- * <p>Uses an in-process H2 database with auto-create enabled to keep the test self-contained.
- * The shape (controller / repository / advisor / erasure handler / autoconfig wiring) is
- * identical to the production deployment.
+ * <p>Auth pattern: explicit {@code httpBasic(username, password)} request post-processor
+ * on every secured request. Spring Security 7 (Spring Boot 4) tightened the
+ * {@code @WithMockUser} integration with {@code @AutoConfigureMockMvc} so that the
+ * mock authentication no longer auto-applies on every request the way it did in
+ * Spring Security 6 and earlier; using {@code httpBasic} keeps the test independent
+ * of that integration point and matches what a real curl-against-the-running-app
+ * would do.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -40,7 +44,6 @@ class QuickstartE2ETest {
     MockMvc mvc;
 
     @Test
-    @WithMockUser(username = "app", roles = "USER")
     void createCustomerAndFetchHits200() throws Exception {
         String body = """
                 {
@@ -52,12 +55,14 @@ class QuickstartE2ETest {
                 }
                 """;
         mvc.perform(post("/customers")
+                        .with(httpBasic("app", "app-secret"))
                         .contentType("application/json")
                         .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("alice-1"));
 
-        mvc.perform(get("/customers/alice-1"))
+        mvc.perform(get("/customers/alice-1")
+                        .with(httpBasic("app", "app-secret")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("alice@example.com"));
     }
@@ -69,13 +74,13 @@ class QuickstartE2ETest {
     }
 
     @Test
-    @WithMockUser(username = "app", roles = "USER")
     void erasureEndpointForbiddenForNonDpoRole() throws Exception {
-        mvc.perform(delete("/gdpr/erasure/alice-1")).andExpect(status().isForbidden());
+        mvc.perform(delete("/gdpr/erasure/alice-1")
+                        .with(httpBasic("app", "app-secret")))
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(username = "dpo", roles = "DPO")
     void erasureEndpointAccessibleToDpoRole() throws Exception {
         String body = """
                 {
@@ -87,12 +92,13 @@ class QuickstartE2ETest {
                 }
                 """;
         mvc.perform(post("/customers")
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("app").roles("USER"))
+                        .with(httpBasic("app", "app-secret"))
                         .contentType("application/json")
                         .content(body))
                 .andExpect(status().isOk());
 
-        mvc.perform(delete("/gdpr/erasure/bob-2"))
+        mvc.perform(delete("/gdpr/erasure/bob-2")
+                        .with(httpBasic("dpo", "dpo-secret")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.subjectId").value("bob-2"));
     }
