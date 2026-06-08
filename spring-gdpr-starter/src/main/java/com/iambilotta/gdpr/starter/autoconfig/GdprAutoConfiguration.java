@@ -36,6 +36,7 @@ import com.iambilotta.gdpr.starter.retention.RetentionScheduler;
 import com.iambilotta.gdpr.starter.retention.RetentionTarget;
 import com.iambilotta.gdpr.starter.web.GdprController;
 import com.iambilotta.gdpr.starter.web.GdprExceptionHandler;
+import com.iambilotta.gdpr.starter.web.GdprSecurityWarning;
 
 @AutoConfiguration(after = DataSourceAutoConfiguration.class)
 @ConditionalOnProperty(prefix = "spring.gdpr", name = "enabled", havingValue = "true", matchIfMissing = true)
@@ -185,6 +186,12 @@ public class GdprAutoConfiguration {
         @ConditionalOnMissingBean
         public GdprExceptionHandler gdprExceptionHandler() {
             return new GdprExceptionHandler();
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        public GdprSecurityWarning gdprSecurityWarning(GdprProperties properties) {
+            return new GdprSecurityWarning(properties.getWeb().getBasePath());
         }
     }
 }

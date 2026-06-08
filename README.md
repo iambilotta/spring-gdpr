@@ -290,7 +290,14 @@ IDE autocomplete is wired via the bundled `additional-spring-configuration-metad
 
 ## Wiring with Spring Security
 
-The starter does **not** add authentication. The `/gdpr/**` endpoints are sensitive (erasure deletes data, access export reveals subjects), so wire your security rules:
+The starter does **not** add authentication. The `/gdpr/**` endpoints are sensitive (erasure deletes data, the Art. 15 access export reveals a subject's dossier), so you **must** wire your own security rules. To make the foot-gun loud rather than silent, the starter logs a **startup WARN** whenever it mounts the surface:
+
+```
+spring-gdpr mounted its REST surface at /gdpr/** WITHOUT authentication. These endpoints
+delete personal data ... Wire a SecurityFilterChain restricting /gdpr/** to a privileged role ...
+```
+
+The app still boots (fail-soft is good DX), but you cannot miss the open surface. Once you have secured the path, raise the `com.iambilotta.gdpr.starter.web.GdprSecurityWarning` logger to `ERROR` to silence it. Example wiring:
 
 ```java
 @Configuration
