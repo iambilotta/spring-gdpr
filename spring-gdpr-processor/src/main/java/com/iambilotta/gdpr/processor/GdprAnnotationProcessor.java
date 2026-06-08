@@ -3,10 +3,12 @@ package com.iambilotta.gdpr.processor;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
@@ -75,8 +77,9 @@ public class GdprAnnotationProcessor extends AbstractProcessor {
         }
         for (Element element : roundEnv.getElementsAnnotatedWith(GdprPersonalData.class)) {
             ProcessingRecord record = collect(typeOwner(element));
-            record.touchedPersonalData(element);
-            if (element.getAnnotation(GdprPersonalData.class).specialCategory()) {
+            GdprPersonalData annotation = element.getAnnotation(GdprPersonalData.class);
+            record.touchedPersonalData(element.getSimpleName().toString(), annotation.category());
+            if (annotation.specialCategory()) {
                 record.markSpecialCategory();
             }
         }
@@ -127,7 +130,7 @@ public class GdprAnnotationProcessor extends AbstractProcessor {
         FileObject file = filer.createResource(
                 StandardLocation.SOURCE_OUTPUT, "spring.gdpr", "ropa.csv");
         try (Writer writer = file.openWriter()) {
-            writer.write("entity,data_subjects,legal_basis,retention_period,strategy,special_category\n");
+            writer.write("entity,data_subjects,legal_basis,retention_period,strategy,categories,special_category\n");
             for (ProcessingRecord record : ropaRecords()) {
                 writer.write(record.toCsvRow());
                 writer.write('\n');
@@ -148,8 +151,8 @@ public class GdprAnnotationProcessor extends AbstractProcessor {
             if (ropa.isEmpty()) {
                 writer.write("(No type carries record-level annotations. Add `@GdprDataSubjects` + `@GdprLegalBasis` + `@GdprRetention` to your domain entities.)\n\n");
             } else {
-                writer.write("| Entity | Data subjects | Legal basis | Retention | Strategy | Special category |\n");
-                writer.write("|---|---|---|---|---|---|\n");
+                writer.write("| Entity | Data subjects | Legal basis | Retention | Strategy | Categories | Special category |\n");
+                writer.write("|---|---|---|---|---|---|---|\n");
                 for (ProcessingRecord record : ropa) {
                     writer.write(record.toMarkdownRow());
                     writer.write('\n');
@@ -163,11 +166,12 @@ public class GdprAnnotationProcessor extends AbstractProcessor {
                 writer.write("(None.)\n\n");
             } else {
                 writer.write("Methods or fields annotated with `@GdprPersonalData` on types that do not themselves carry record-level annotations. Each access fires the audit advisor at runtime.\n\n");
-                writer.write("| Type | Member |\n");
-                writer.write("|---|---|\n");
+                writer.write("| Type | Member | Category |\n");
+                writer.write("|---|---|---|\n");
                 for (ProcessingRecord record : access) {
                     for (String member : record.touchedMembers) {
-                        writer.write("| " + record.entity + " | " + member + " |\n");
+                        GdprPersonalData.Category category = record.categoryOf(member);
+                        writer.write("| " + record.entity + " | " + member + " | " + category + " |\n");
                     }
                 }
                 writer.write('\n');
@@ -209,6 +213,9 @@ public class GdprAnnotationProcessor extends AbstractProcessor {
     static final class ProcessingRecord {
         private final String entity;
         private final List<String> touchedMembers = new ArrayList<>();
+        private final Map<String, GdprPersonalData.Category> categoryByMember = new LinkedHashMap<>();
+        private final EnumSet<GdprPersonalData.Category> categories =
+                EnumSet.noneOf(GdprPersonalData.Category.class);
         private String[] subjects = new String[0];
         private String legalBasis = "";
         private String retentionPeriod = "";
@@ -219,6 +226,11 @@ public class GdprAnnotationProcessor extends AbstractProcessor {
 
         ProcessingRecord(String entity) {
             this.entity = entity;
+        }
+
+        /** Test seam + the path the processor uses when a non-personal-data type-level annotation is present. */
+        void markTypeLevelAnnotation() {
+            this.hasTypeLevelAnnotation = true;
         }
 
         void withSubjects(GdprDataSubjects ann) {
@@ -300,12 +312,27 @@ public class GdprAnnotationProcessor extends AbstractProcessor {
             this.hasTypeLevelAnnotation = true;
         }
 
-        void touchedPersonalData(Element annotated) {
+        void touchedPersonalData(String memberName, GdprPersonalData.Category category) {
             this.touchedPersonalData = true;
-            String memberName = annotated.getSimpleName().toString();
-            if (!memberName.isEmpty() && !touchedMembers.contains(memberName)) {
+            if (memberName != null && !memberName.isEmpty() && !touchedMembers.contains(memberName)) {
                 touchedMembers.add(memberName);
+                categoryByMember.put(memberName, category);
             }
+            if (category != GdprPersonalData.Category.UNCATEGORISED) {
+                categories.add(category);
+            }
+        }
+
+        GdprPersonalData.Category categoryOf(String member) {
+            return categoryByMember.getOrDefault(member, GdprPersonalData.Category.UNCATEGORISED);
+        }
+
+        /** Distinct declared categories (UNCATEGORISED excluded), sorted by name, pipe-joined (deterministic output). */
+        String categoriesColumn() {
+            return categories.stream()
+                    .map(Enum::name)
+                    .sorted()
+                    .collect(Collectors.joining("|"));
         }
 
         void markSpecialCategory() {
@@ -323,14 +350,17 @@ public class GdprAnnotationProcessor extends AbstractProcessor {
                     csv(legalBasis),
                     csv(retentionPeriod),
                     csv(strategy),
+                    csv(categoriesColumn()),
                     Boolean.toString(specialCategory));
         }
 
         String toMarkdownRow() {
+            String cats = categoriesColumn();
             return "| " + entity + " | " + String.join(", ", subjects)
                     + " | " + (legalBasis.isEmpty() ? "MISSING" : legalBasis)
                     + " | " + (retentionPeriod.isEmpty() ? "MISSING" : retentionPeriod)
                     + " | " + (strategy.isEmpty() ? "MISSING" : strategy)
+                    + " | " + (cats.isEmpty() ? "-" : cats.replace("|", ", "))
                     + " | " + (specialCategory ? "yes" : "no") + " |";
         }
 

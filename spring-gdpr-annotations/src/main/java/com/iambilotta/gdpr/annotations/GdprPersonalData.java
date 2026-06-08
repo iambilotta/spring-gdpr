@@ -29,4 +29,33 @@ public @interface GdprPersonalData {
      * or Art. 10 (criminal convictions). Increases DPIA risk score.
      */
     boolean specialCategory() default false;
+
+    /**
+     * Coarse classification of the personal-data element, orthogonal to {@link #specialCategory()}.
+     * Drives category-grouped ROPA/DPIA output and (downstream) selective retention and redaction.
+     *
+     * <p>Default {@link Category#UNCATEGORISED} keeps every pre-existing annotation valid: a field
+     * left unclassified is not an error, it simply carries no category axis.
+     */
+    Category category() default Category.UNCATEGORISED;
+
+    /**
+     * Coarse personal-data category dimension (Art. 5(1)(c) data minimisation + Art. 30 ROPA).
+     * Deliberately small: a fine-grained taxonomy belongs in the adopter's data catalogue, not in
+     * a compile-time annotation everyone has to maintain.
+     */
+    enum Category {
+
+        /** No category declared. The backward-compatible default. */
+        UNCATEGORISED,
+
+        /** Identity data: legal name, national id, date of birth, photo. */
+        IDENTITY,
+
+        /** Contact data: email, phone, postal address. */
+        CONTACT,
+
+        /** Financial data: IBAN, card number, tax id, income. */
+        FINANCIAL
+    }
 }
