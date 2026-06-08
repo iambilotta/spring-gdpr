@@ -7,6 +7,9 @@ The shape is what a production-grade adopter ships:
 - Async sink decorator on by default.
 - `ActorResolver` overridden to read the Spring Security principal.
 - DPO-role gate on `/gdpr/**`.
+- `SubjectDataProvider` registered so the Article 15 access export returns real data.
+- `Customer` fields tagged with `IDENTITY` / `CONTACT` / `FINANCIAL` categories (populates the `categories` column of `ropa.csv`).
+- `logback-spring.xml` wiring the `%piimsg` redaction converter so a logged `Customer` masks its personal fields.
 
 ## What you need
 
@@ -18,7 +21,10 @@ The shape is what a production-grade adopter ships:
 
 ```bash
 # 1) Build the spring-gdpr modules and install them to the local Maven repo.
-#    The quickstart depends on 0.1.0-SNAPSHOT, which is not yet on Maven Central.
+#    The quickstart depends on 2.0.0 via groupId com.iambilotta.gdpr (the artifacts'
+#    own coordinates), resolved from your local ~/.m2 after this install. Consumers
+#    who pull from JitPack instead use groupId com.github.iambilotta.spring-gdpr
+#    (see the note in the main README "Quick start").
 cd ../..
 mvn -B -ntp -DskipTests install
 
@@ -69,11 +75,31 @@ docker compose exec -T postgres psql -U gdpr -d gdpr -c \
 
 You should see one row with `actor = 'app'`, `legal_basis = '6(1)(b) + 9(2)(a)'`, `special_category = true`.
 
-Run a right-of-access export (DPO role required):
+Read the audit log for the subject (who accessed what, DPO role required):
 
 ```bash
 curl -u dpo:dpo-secret \
   "http://localhost:8080/gdpr/audit/access?subjectId=alice-1"
+```
+
+Run the Article 15 right-of-access export (DPO role required). The `customerDataProvider`
+bean in [`GdprExportConfig`](src/main/java/com/example/gdprdemo/GdprExportConfig.java) feeds
+the `Customer`'s `@GdprPersonalData` fields into the dossier, each tagged with its category:
+
+```bash
+curl -u dpo:dpo-secret \
+  "http://localhost:8080/gdpr/access/export?subjectId=alice-1"
+```
+
+```json
+{
+  "subjectId": "alice-1",
+  "fields": [
+    { "field": "fullName", "value": "Alice", "description": "full legal name", "category": "IDENTITY" },
+    { "field": "email", "value": "alice@example.com", "description": "primary email", "category": "CONTACT" },
+    { "field": "taxId", "value": "AT-12345", "description": "national tax id", "category": "FINANCIAL" }
+  ]
+}
 ```
 
 Run a right-to-erasure (DPO role only):
