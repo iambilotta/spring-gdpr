@@ -28,18 +28,21 @@ public class Customer {
     @Id
     private String id;
 
-    @GdprPersonalData(description = "full legal name")
+    @GdprPersonalData(description = "full legal name", category = GdprPersonalData.Category.IDENTITY)
     @Column(name = "full_name")
     private String fullName;
 
-    @GdprPersonalData(description = "primary email")
+    @GdprPersonalData(description = "primary email", category = GdprPersonalData.Category.CONTACT)
     private String email;
 
-    @GdprPersonalData(description = "national tax id")
+    @GdprPersonalData(description = "national tax id", category = GdprPersonalData.Category.FINANCIAL)
     @Column(name = "tax_id")
     private String taxId;
 
-    @GdprPersonalData(description = "self-declared health condition", specialCategory = true)
+    @GdprPersonalData(
+            description = "self-declared health condition",
+            specialCategory = true,
+            category = GdprPersonalData.Category.IDENTITY)
     @Column(name = "health_condition")
     private String healthCondition;
 

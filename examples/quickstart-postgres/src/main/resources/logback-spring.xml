@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Demonstrates spring-gdpr log redaction (Art. 5(1)(f)).
+
+  The %piimsg conversion word renders the log message with every @GdprPersonalData argument
+  masked, while leaving non-personal arguments untouched. Use it in place of %msg / %message.
+  If the app logs a whole @GdprPersonalData-annotated object (e.g. log.info("loaded {}", customer)),
+  the personal fields print as *** instead of leaking into the log file.
+
+  Try it: log a Customer at INFO and watch fullName / email / taxId / healthCondition come out masked.
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <conversionRule conversionWord="piimsg"
+                    class="com.iambilotta.gdpr.starter.logging.PiiMaskingConverter"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %piimsg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

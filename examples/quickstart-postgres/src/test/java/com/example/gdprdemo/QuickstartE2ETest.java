@@ -81,6 +81,32 @@ class QuickstartE2ETest {
     }
 
     @Test
+    void accessExportReturnsTheSubjectsClassifiedFieldsForDpo() throws Exception {
+        String body = """
+                {
+                  "id": "carol-3",
+                  "fullName": "Carol",
+                  "email": "carol@example.com",
+                  "taxId": "CT-11111",
+                  "healthCondition": "none"
+                }
+                """;
+        mvc.perform(post("/customers")
+                        .with(httpBasic("app", "app-secret"))
+                        .contentType("application/json")
+                        .content(body))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/gdpr/access/export")
+                        .param("subjectId", "carol-3")
+                        .with(httpBasic("dpo", "dpo-secret")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.subjectId").value("carol-3"))
+                .andExpect(jsonPath("$.fields[?(@.field == 'email')].value").value("carol@example.com"))
+                .andExpect(jsonPath("$.fields[?(@.field == 'email')].category").value("CONTACT"));
+    }
+
+    @Test
     void erasureEndpointAccessibleToDpoRole() throws Exception {
         String body = """
                 {

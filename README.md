@@ -193,6 +193,8 @@ classpath:db/migration/V1__gdpr_audit_access.sql
 
 **5. Annotate one domain entity** (see the example above), `mvn compile`, open the two generated files under `target/generated-sources/annotations/spring/gdpr/`.
 
+> **A note on the groupId.** Consumers pulling from JitPack use `com.github.iambilotta.spring-gdpr` (JitPack derives the groupId from the GitHub coordinates). The artifacts' own Maven coordinates are `com.iambilotta.gdpr` (the `groupId` in each module's `pom.xml`); that is what you use when you build and install locally, as the bundled [`examples/quickstart-postgres`](examples/quickstart-postgres) does. Same jars, two coordinate namespaces depending on how you resolve them.
+
 End-to-end runnable example with PostgreSQL via Docker Compose + Spring Security: [`examples/quickstart-postgres`](examples/quickstart-postgres). Cross-library demo composed with `spring-aiact`: [`spring-gdpr-aiact-demo`](https://github.com/iambilotta/spring-gdpr-aiact-demo).
 
 ## How right-to-erasure actually works
@@ -262,6 +264,54 @@ Table and column names are validated as bare SQL identifiers at construction (th
 | `@GdprErasable` | type | Right-to-erasure participation, FK-safe ordering | DPIA + erasure flow |
 
 Article 9 special categories (health, biometric) and Article 10 (criminal convictions) compose: `specialBasis` / `criminalBasis` on `@GdprLegalBasis` produce a composite reference like `6(1)(b) + 9(2)(h)` in the audit row.
+
+### Data categories (`@GdprPersonalData.category`)
+
+`@GdprPersonalData` carries a coarse `category` axis, orthogonal to `specialCategory`: `IDENTITY`, `CONTACT`, `FINANCIAL`, and the backward-compatible default `UNCATEGORISED`. It is deliberately small (a fine-grained taxonomy belongs in your data catalogue, not a compile-time annotation everyone maintains).
+
+```java
+@GdprPersonalData(description = "primary email", category = Category.CONTACT)
+private String email;
+```
+
+The distinct categories touched by an entity surface in the `categories` column of `ropa.csv` (Art. 30 data-minimisation evidence), sorted and pipe-joined: e.g. `CONTACT|FINANCIAL|IDENTITY` for the demo `Customer`. The category also rides on every exported field in the Article 15 dossier (see below).
+
+## Log redaction (`%piimsg`)
+
+Accidentally logging a whole `@GdprPersonalData`-annotated object leaks personal data into your log files (Art. 5(1)(f)). The starter ships a Logback converter, `PiiMaskingConverter`, that masks every `@GdprPersonalData` argument while leaving non-personal arguments untouched. Register it as the `%piimsg` conversion word in `logback-spring.xml` and use it in place of `%msg`:
+
+```xml
+<conversionRule conversionWord="piimsg"
+                class="com.iambilotta.gdpr.starter.logging.PiiMaskingConverter"/>
+<pattern>%d %-5level %logger - %piimsg%n</pattern>
+```
+
+Now `log.info("loaded {}", customer)` renders as `Customer{id=alice-1, fullName=***, email=***, taxId=***}` instead of leaking the fields. It fails closed: a field it cannot read is masked, never printed. The example ships a ready [`logback-spring.xml`](examples/quickstart-postgres/src/main/resources/logback-spring.xml). (The `class` attribute is the Logback 1.5.16+ form; older docs used `converterClass`.)
+
+## Article 15 access export
+
+Beyond the audit log, the starter assembles the **right-of-access dossier** (Art. 15): every classified field a subject's records carry, across the stores you register. You implement one `SubjectDataProvider` per source (where the subject's data lives is the one thing only you know); the library reflects the `@GdprPersonalData` fields of whatever objects you return.
+
+```java
+@Bean
+SubjectDataProvider customerDataProvider(CustomerRepository customers) {
+    return subjectId -> customers.findById(subjectId).map(List::<Object>of).orElseGet(List::of);
+}
+```
+
+Then `GET /gdpr/access/export?subjectId=...` returns the dossier:
+
+```json
+{
+  "subjectId": "alice-1",
+  "fields": [
+    { "sourceType": "com.example.Customer", "field": "email",
+      "value": "alice@example.com", "description": "primary email", "category": "CONTACT" }
+  ]
+}
+```
+
+Honesty contract (same as erasure): the export lists exactly what the registered providers return, never more. With no provider registered the `fields` array is simply empty. For the one-table case use the ready-made `JdbcSubjectDataProvider` (see [Ready-made JDBC adapters](#ready-made-jdbc-adapters-skip-the-boilerplate)).
 
 ## Configuration
 

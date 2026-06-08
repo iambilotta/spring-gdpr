@@ -12,9 +12,12 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
  *
  * <pre>{@code
  * <conversionRule conversionWord="piimsg"
- *     converterClass="com.iambilotta.gdpr.starter.logging.PiiMaskingConverter"/>
+ *     class="com.iambilotta.gdpr.starter.logging.PiiMaskingConverter"/>
  * <pattern>%d %-5level %logger - %piimsg%n</pattern>
  * }</pre>
+ *
+ * <p>The {@code class} attribute is the form Logback 1.5.16+ expects (the older
+ * {@code converterClass} attribute is deprecated). Spring Boot reads {@code logback-spring.xml}.
  *
  * <p>It re-runs the SLF4J {@code {}} substitution itself so it can mask each argument <em>before</em>
  * it lands in the formatted message: by the time {@code event.getFormattedMessage()} exists the PII
