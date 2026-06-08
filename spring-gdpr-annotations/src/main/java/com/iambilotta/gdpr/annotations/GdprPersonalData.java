@@ -40,6 +40,18 @@ public @interface GdprPersonalData {
     Category category() default Category.UNCATEGORISED;
 
     /**
+     * Where the field's value physically lives, which selects the erasure mechanism (ADR-0010).
+     *
+     * <p>Default {@link Storage#INLINE} keeps every pre-existing annotation valid: the value is
+     * stored inline on the carrier and erased by a mutable-store {@code ErasureHandler} (or, for an
+     * immutable event, by crypto-shredding). {@link Storage#FORGETTABLE_PAYLOAD} declares the value
+     * externalised to the {@code ForgettablePayloadStore}; the carrier holds only a reference, and
+     * erasure is an actual {@code DELETE} of the external row, the library's <strong>primary</strong>
+     * personal-data erasure path.
+     */
+    Storage storage() default Storage.INLINE;
+
+    /**
      * Coarse personal-data category dimension (Art. 5(1)(c) data minimisation + Art. 30 ROPA).
      * Deliberately small: a fine-grained taxonomy belongs in the adopter's data catalogue, not in
      * a compile-time annotation everyone has to maintain.
@@ -57,5 +69,25 @@ public @interface GdprPersonalData {
 
         /** Financial data: IBAN, card number, tax id, income. */
         FINANCIAL
+    }
+
+    /**
+     * Physical storage location of a personal-data field, selecting its erasure mechanism (ADR-0010).
+     */
+    enum Storage {
+
+        /**
+         * Value stored inline on the carrier (the backward-compatible default). Erased by a mutable
+         * store handler, or by crypto-shredding when the carrier is an immutable event.
+         */
+        INLINE,
+
+        /**
+         * Value externalised to the {@code ForgettablePayloadStore}; the carrier holds only a
+         * reference. Erasure is an actual {@code DELETE} of the external row, the PRIMARY path for
+         * personal data: it is anonymisation, not the pseudonymisation of crypto-shredding (Recital
+         * 26, EDPB 01/2025).
+         */
+        FORGETTABLE_PAYLOAD
     }
 }
