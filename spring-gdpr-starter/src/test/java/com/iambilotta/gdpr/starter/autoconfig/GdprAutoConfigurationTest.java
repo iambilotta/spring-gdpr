@@ -85,6 +85,19 @@ class GdprAutoConfigurationTest {
                         .isInstanceOf(AsyncAuditSinkDecorator.class));
     }
 
+    /**
+     * @spec.given the GDPR autoconfiguration on the context
+     * @spec.when  the context starts
+     * @spec.then  an AccessExportService bean is wired (Art. 15 export, REQ-GDPR-019), even with
+     *             no SubjectDataProvider registered (it just exports nothing)
+     * @spec.us    REQ-GDPR-019
+     */
+    @Test
+    void wiresTheAccessExportService() {
+        runner.run(ctx -> assertThat(ctx).hasSingleBean(
+                com.iambilotta.gdpr.starter.access.AccessExportService.class));
+    }
+
     @Configuration(proxyBeanMethods = false)
     static class CustomSinkConfig {
 

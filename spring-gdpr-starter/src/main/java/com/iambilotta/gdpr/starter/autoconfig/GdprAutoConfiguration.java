@@ -20,6 +20,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import com.iambilotta.gdpr.starter.GdprProperties;
+import com.iambilotta.gdpr.starter.access.AccessExportService;
+import com.iambilotta.gdpr.starter.access.SubjectDataProvider;
 import com.iambilotta.gdpr.starter.audit.ActorResolver;
 import com.iambilotta.gdpr.starter.audit.AsyncAuditSinkDecorator;
 import com.iambilotta.gdpr.starter.audit.AuditSink;
@@ -114,6 +116,17 @@ public class GdprAutoConfiguration {
     public ErasureService gdprErasureService(ObjectProvider<ErasureHandler> handlers) {
         List<ErasureHandler> resolved = handlers.orderedStream().toList();
         return new ErasureService(resolved.isEmpty() ? Collections.emptyList() : resolved);
+    }
+
+    /**
+     * Article 15 access export (REQ-GDPR-019). Collects every {@link SubjectDataProvider} bean the
+     * adopter registered; with none registered the export is simply empty, mirroring the honesty
+     * contract of erasure (the library exports exactly what the providers return, never more).
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AccessExportService gdprAccessExportService(ObjectProvider<SubjectDataProvider> providers) {
+        return new AccessExportService(providers.orderedStream().toList());
     }
 
     private static boolean isJdbcTemplateOnClasspath() {
