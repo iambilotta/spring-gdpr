@@ -35,10 +35,11 @@ same catalog, not hidden.
 
 **As-is snapshot (2026-06-08, verified against the clone)**: the build-time generators, the
 runtime audit advisor + async sink, the erasure orchestration shell, and the retention
-scheduler are all implemented and tested. The three to-be gaps the library itself flags are
-**append-only-safe erasure** (crypto-shredding for event-sourced stores), the
+scheduler are all implemented and tested. **Append-only-safe erasure** (crypto-shredding for
+event-sourced stores, REQ-GDPR-016/017, ADR-0009) is now implemented (`erasure/crypto/`). The
+two remaining to-be gaps the library itself flags are the
 **IDENTITY/CONTACT/FINANCIAL category taxonomy** (today `@GdprPersonalData` carries only a
-`specialCategory` boolean), and **structured-log PII redaction**. Consent (Art.7) and
+`specialCategory` boolean) and **structured-log PII redaction**. Consent (Art.7) and
 portability (Art.20) are the two deferred-by-ADR gaps.
 
 ---
@@ -234,9 +235,9 @@ retention, redaction, and the ROPA can group and act by category.
 - priorità: M
 - fonte: GDPR Art.17; dogfooding gap (housetree gest, event-sourced Activity domain)
 - rationale: in an append-only event store you cannot delete the event that carries the PII; erasure must be a by-design property, not a DELETE. The current `ErasureHandler` shell assumes mutable stores (it deletes/anonymises rows); it does not cover an immutable log
-- trace-to: `proposto` — depends-on REQ-GDPR-017 (the strategy ADR); end-to-end erasure test (the PII is no longer recoverable from any projection nor the raw event payload) + replay-idempotence test
+- trace-to: `implementato` — ADR-0009 (crypto-shredding); `CryptoShreddingErasureTest` (drop-the-key renders PII unrecoverable while the event stays byte-immutable; per-subject granularity; replay-idempotent with no PII; erasure recorded as an audit fact), `AesGcmCryptoShredderTest` (AEAD, fail-closed, unique IV), `JdbcSubjectKeyStoreTest` (key lifecycle + tombstone/no-resurrection); classes under `erasure/crypto/` (`SubjectKeyStore`, `CryptoShredder`/`AesGcmCryptoShredder`, `CryptoShreddingErasureHandler`); migration `V2__gdpr_subject_key.sql`
 - depends-on: REQ-GDPR-017
-- stato: proposto
+- stato: implementato
 
 WHEN a subject exercises erasure against an append-only event store, the system SHALL render
 that subject's personal data **no longer recoverable** from any projection and from the raw
@@ -256,13 +257,13 @@ And the audit trail still proves the erasure happened (who, when, why)
 - priorità: M
 - fonte: derived-from REQ-GDPR-016
 - rationale: the strategy is a one-way door (it touches the append-only event format) and must be decided in an ADR with an adversarial pass, not fixed in a requirement
-- trace-to: `proposto` — ADR `docs/adr/00NN-append-only-erasure-strategy.md` (to write when the event-sourcing module is built)
-- stato: proposto
+- trace-to: `implementato` — ADR-0009 `docs/adr/0009-append-only-erasure-crypto-shredding.md` (accepted): crypto-shredding chosen over sentinel-at-projection; adversarial pass turned key-backup retention, per-subject granularity and involuntary-erasure into design constraints
+- stato: implementato
 
 WHEN REQ-GDPR-016 is implemented, the system SHALL adopt the strategy decided in a dedicated
 ADR between (a) **crypto-shredding** (per-subject encrypted PII, erasure = drop the key) and
-(b) **sentinel-at-projection + upcaster** that strips the raw payload. The library ships
-neither today; this is the first event-sourcing module to build.
+(b) **sentinel-at-projection + upcaster** that strips the raw payload. ADR-0009 adopts (a):
+crypto-shredding, the first event-sourcing module the library ships.
 
 ### REQ-GDPR-018 | Structured-log PII redaction (Art.5(1)(f))
 - categoria: qos-constraint
@@ -323,3 +324,4 @@ not ready in this repo.
 
 ## Changelog
 - 2026-06-08 | REQ-GDPR-001..021 | created | first hand-authored EARS to-be spec of the library itself; 14 implementato (each with a hand-verified trace to an existing test/class), 7 proposto (category taxonomy, append-only erasure + its strategy ADR, log-redaction, Art.15 export, plus the ADR-0008 deferred consent/portability); strategy for append-only erasure deferred to a future ADR (REQ-GDPR-017)
+- 2026-06-08 | REQ-GDPR-016, REQ-GDPR-017 | proposto -> implementato | crypto-shredding shipped under ADR-0009 (accepted): per-subject AES-256-GCM key store (`SubjectKeyStore` SPI + JDBC default, `gdpr_subject_key`/V2), `AesGcmCryptoShredder`, `CryptoShreddingErasureHandler` (drop-the-key + audit fact); `CryptoShreddingErasureTest` un-`@Disabled` (4 GREEN) plus `AesGcmCryptoShredderTest`/`JdbcSubjectKeyStoreTest`

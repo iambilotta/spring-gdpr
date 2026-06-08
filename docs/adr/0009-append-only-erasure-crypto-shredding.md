@@ -1,6 +1,6 @@
 # ADR-0009: Append-only-safe erasure via crypto-shredding
 
-- **Status:** proposed
+- **Status:** accepted
 - **Date:** 2026-06-08
 - **Deciders:** Francesco Bilotta
 
@@ -65,10 +65,39 @@ store is populated, because the reversal cost is high), not reasons to defer:
 - Reversal cost is high (changing strategy after populating the store = re-encrypt/migrate every
   event). This is the reason REQ-GDPR-017 forced the decision into an ADR with an adversarial pass
   rather than a requirement.
-- Implementation is gated on **human GREEN approval**: the RED tests that specify this behavior
-  (`docs/requirements` REQ-GDPR-016) are committed `@Disabled("pending human GREEN approval,
-  ADR-0009")`. They define the contract; the encryption-at-write + key-lifecycle + replay code is
-  not written until this ADR flips from `proposed` to `accepted`.
+- Implementation was gated on **human GREEN approval**: the RED tests that specify this behavior
+  (`docs/requirements` REQ-GDPR-016) were committed `@Disabled("pending human GREEN approval,
+  ADR-0009")`. With this ADR `accepted`, the encryption-at-write + key-lifecycle + replay code is
+  written and the tests are enabled.
+
+## Implementation (what shipped)
+
+The reusable, store-agnostic mechanism lives in
+`spring-gdpr-starter/.../erasure/crypto/`:
+
+- `SubjectKeyStore` (SPI) — per-subject key lifecycle: `keyFor` / `getOrCreate` / `drop` /
+  `exists`. Default `JdbcSubjectKeyStore` over a `gdpr_subject_key` table (migration
+  `V2__gdpr_subject_key.sql`); `InMemorySubjectKeyStore` for tests. The SPI lets an adopter back
+  it with a KMS / Secret Manager (the column is `wrapped_key`, ready for KEK-wrapping).
+- `CryptoShredder` (SPI) + `AesGcmCryptoShredder` — field-level encrypt-on-write /
+  decrypt-on-read. **Crypto choices**: AES-256-GCM (AEAD), a fresh 96-bit IV per record from
+  `SecureRandom`, 128-bit auth tag, wire format `[version][IV][ciphertext||tag]`. Decrypt is
+  **fail-closed**: a dropped key, a tampered ciphertext (failed GCM tag), a wrong-subject key, or
+  malformed bytes all return `Optional.empty()`, never a partial plaintext, never a leaked cause.
+  Plaintext and keys are never logged; key byte arrays are zeroed after use.
+- `CryptoShreddingErasureHandler` — an `ErasureHandler` whose `erase(subjectId)` **drops the key**
+  (the Art. 17 act) and writes an `AuditAccessRecord` (action `ERASURE`, legal basis `17`) to the
+  `AuditSink`. The erasure is a recorded fact; no event is touched.
+
+**Tombstone / no-resurrection**: `drop` records a tombstone (`erased_at`); a later `getOrCreate`
+for an erased subject throws rather than minting a fresh key, so an erasure cannot be silently
+undone.
+
+**Key-backup constraint (re-stated as a hard rule)**: backups of `gdpr_subject_key` MUST honour
+the erasure retention. A drop must propagate to every backup, or the key backup must carry the
+same retention as the erasure SLA, so restoring the store can never un-erase a subject. The
+default `JdbcSubjectKeyStore` stores the raw 256-bit key; protect the table at rest (DB-level
+encryption, least-privilege grants) or wrap the key under a KMS-held KEK via the SPI.
 
 ## Alternatives considered
 
