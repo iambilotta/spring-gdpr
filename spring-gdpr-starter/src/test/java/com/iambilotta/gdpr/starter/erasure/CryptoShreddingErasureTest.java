@@ -2,55 +2,36 @@ package com.iambilotta.gdpr.starter.erasure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import com.iambilotta.gdpr.annotations.GdprErasable;
+import com.iambilotta.gdpr.starter.audit.ActorResolver;
+import com.iambilotta.gdpr.starter.audit.AuditAccessRecord;
+import com.iambilotta.gdpr.starter.audit.AuditSink;
+import com.iambilotta.gdpr.starter.erasure.crypto.AesGcmCryptoShredder;
+import com.iambilotta.gdpr.starter.erasure.crypto.CryptoShredder;
+import com.iambilotta.gdpr.starter.erasure.crypto.CryptoShreddingErasureHandler;
+import com.iambilotta.gdpr.starter.erasure.crypto.InMemorySubjectKeyStore;
+import com.iambilotta.gdpr.starter.erasure.crypto.SubjectKeyStore;
+
 /**
- * RED specification for REQ-GDPR-016 / REQ-GDPR-017 (append-only-safe erasure via
- * crypto-shredding, ADR-0009). These tests define the desired behavior of an event-sourcing
- * erasure module the library does NOT yet ship.
+ * Specification for REQ-GDPR-016 / REQ-GDPR-017 (append-only-safe erasure via crypto-shredding,
+ * ADR-0009). These tests drive the event-sourcing erasure module the library now ships.
  *
  * <p><strong>ONE-WAY DOOR.</strong> The strategy (crypto-shredding: per-subject key, erasure =
  * drop the key) touches the append-only event format and is irreversible once a store is
- * populated. Implementation is therefore gated on human GREEN approval: every test here is
- * {@link Disabled @Disabled("pending human GREEN approval, ADR-0009")}. Do not implement the
- * production code (the {@code SubjectKey*} / {@code CryptoShredder} types declared below as the
- * intended contract) until ADR-0009 flips from {@code proposed} to {@code accepted}.
+ * populated. ADR-0009 was approved (proposed -> accepted) before this implementation; the tests
+ * are no longer {@code @Disabled}.
  *
- * <p>The nested interfaces below are the contract surface this module will expose. They live in
- * the test on purpose: the file must compile to document the spec, but no production type
- * implements them yet (that is the GREEN that needs approval).
+ * <p>The mechanism is store-agnostic: spring-gdpr is not itself event-sourced. The harness below
+ * is a tiny in-test "event store" ({@link EncryptedEvent} + an {@link InMemorySubjectKeyStore})
+ * that an event-sourced adopter would replace with its own serializer + key store.
  */
 class CryptoShreddingErasureTest {
-
-    /** Per-subject symmetric key store. Erasure = {@link #drop(String)} a subject's key. */
-    interface SubjectKeyStore {
-        /** Returns the subject's key, minting one on first use; empty after the key was dropped. */
-        Optional<byte[]> keyFor(String subjectId);
-
-        /** Mints (if absent) and returns the subject's key. */
-        byte[] getOrCreate(String subjectId);
-
-        /** Irreversibly removes the subject's key. This is the erasure act. */
-        void drop(String subjectId);
-
-        boolean exists(String subjectId);
-    }
-
-    /** Encrypts a PII field for a subject on write, decrypts on read while the key exists. */
-    interface CryptoShredder {
-        /** Encrypts {@code plaintext} under the subject's key; the result is what the event stores. */
-        byte[] encrypt(String subjectId, String plaintext);
-
-        /**
-         * Decrypts a stored ciphertext. Returns empty once the subject's key has been dropped:
-         * the byte-immutable event still holds the ciphertext, but it is no longer recoverable.
-         */
-        Optional<String> decrypt(String subjectId, byte[] ciphertext);
-    }
 
     /** A minimal append-only event carrying one encrypted PII field. */
     record EncryptedEvent(String subjectId, byte[] encryptedPayload) {
@@ -64,10 +45,9 @@ class CryptoShreddingErasureTest {
      * @spec.us    REQ-GDPR-016
      */
     @Test
-    @Disabled("pending human GREEN approval, ADR-0009")
     void droppingTheKeyRendersThePiiUnrecoverableWhileTheEventStaysImmutable() {
-        CryptoShredder shredder = cryptoShredder();
         SubjectKeyStore keys = keyStore();
+        CryptoShredder shredder = cryptoShredder(keys);
 
         byte[] ciphertext = shredder.encrypt("alice-1", "Alice Liddell");
         EncryptedEvent event = new EncryptedEvent("alice-1", ciphertext);
@@ -90,10 +70,9 @@ class CryptoShreddingErasureTest {
      * @spec.us    REQ-GDPR-016
      */
     @Test
-    @Disabled("pending human GREEN approval, ADR-0009")
     void erasureIsPerSubjectAndDoesNotAffectOtherSubjects() {
-        CryptoShredder shredder = cryptoShredder();
         SubjectKeyStore keys = keyStore();
+        CryptoShredder shredder = cryptoShredder(keys);
 
         byte[] alice = shredder.encrypt("alice-1", "Alice");
         byte[] bob = shredder.encrypt("bob-2", "Bob");
@@ -112,10 +91,9 @@ class CryptoShreddingErasureTest {
      * @spec.us    REQ-GDPR-016
      */
     @Test
-    @Disabled("pending human GREEN approval, ADR-0009")
     void replayAfterErasureIsIdempotentAndExposesNoPii() {
-        CryptoShredder shredder = cryptoShredder();
         SubjectKeyStore keys = keyStore();
+        CryptoShredder shredder = cryptoShredder(keys);
 
         List<EncryptedEvent> stream = List.of(
                 new EncryptedEvent("alice-1", shredder.encrypt("alice-1", "Alice")),
@@ -138,29 +116,41 @@ class CryptoShreddingErasureTest {
      * @spec.us    REQ-GDPR-016
      */
     @Test
-    @Disabled("pending human GREEN approval, ADR-0009")
     void erasurePreservesTheAuditTrailAsARecordedFact() {
         SubjectKeyStore keys = keyStore();
+        CapturingAuditSink audit = new CapturingAuditSink();
+        CryptoShreddingErasureHandler erasure = new CryptoShreddingErasureHandler(
+                keys, audit, ActorResolver.fixed("dpo-jane"), EncryptedEvent.class);
+
         keys.getOrCreate("alice-1");
+        assertThat(keys.exists("alice-1")).isTrue();
 
         // The erasure orchestration drops the key and writes an audit row; the audit trail is
         // append-only and survives the erasure (the erasure is itself a recorded fact).
-        // Asserted here as the contract; wired to AuditSink at GREEN.
-        keys.drop("alice-1");
+        int affected = erasure.erase("alice-1");
 
+        assertThat(affected).isEqualTo(1);
         assertThat(keys.exists("alice-1")).isFalse();
-        // TODO(GREEN, ADR-0009): assert an AuditAccessRecord with action=ERASURE was emitted.
+        assertThat(erasure.strategy()).isEqualTo(GdprErasable.Strategy.DELETE);
+
+        // an AuditAccessRecord with action=ERASURE was emitted (who/when/why preserved).
+        assertThat(audit.records).hasSize(1);
+        AuditAccessRecord fact = audit.records.get(0);
+        assertThat(fact.targetMember()).isEqualTo(CryptoShreddingErasureHandler.ERASURE_ACTION);
+        assertThat(fact.legalBasis()).isEqualTo(CryptoShreddingErasureHandler.ERASURE_LEGAL_BASIS);
+        assertThat(fact.subjectId()).isEqualTo("alice-1");
+        assertThat(fact.actor()).isEqualTo("dpo-jane");
+        assertThat(fact.at()).isNotNull();
     }
 
-    // --- contract stubs: NOT the implementation. They exist so the file compiles; the real
-    // crypto-shredding module is the GREEN that needs human approval (ADR-0009). ---
-
-    private static CryptoShredder cryptoShredder() {
-        throw new UnsupportedOperationException("crypto-shredding not implemented: ADR-0009 pending GREEN");
-    }
+    // --- harness wiring: the real crypto-shredding module backing the in-test event store. ---
 
     private static SubjectKeyStore keyStore() {
-        throw new UnsupportedOperationException("crypto-shredding not implemented: ADR-0009 pending GREEN");
+        return new InMemorySubjectKeyStore();
+    }
+
+    private static CryptoShredder cryptoShredder(SubjectKeyStore keys) {
+        return new AesGcmCryptoShredder(keys);
     }
 
     private static String replayName(CryptoShredder shredder, List<EncryptedEvent> stream) {
@@ -169,5 +159,20 @@ class CryptoShreddingErasureTest {
             shredder.decrypt(event.subjectId(), event.encryptedPayload()).ifPresent(readModel::append);
         }
         return readModel.toString();
+    }
+
+    /** Captures emitted audit facts so the test can assert the erasure was recorded. */
+    private static final class CapturingAuditSink implements AuditSink {
+        private final List<AuditAccessRecord> records = new ArrayList<>();
+
+        @Override
+        public void write(AuditAccessRecord record) {
+            records.add(record);
+        }
+
+        @Override
+        public List<AuditAccessRecord> findBySubject(String subjectId, Instant from, Instant to) {
+            return records.stream().filter(r -> subjectId.equals(r.subjectId())).toList();
+        }
     }
 }
