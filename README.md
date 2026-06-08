@@ -422,6 +422,33 @@ The full decision rationale lives under [`docs/adr/`](docs/adr/). Highlights:
 - [ADR-0007](docs/adr/0007-subjectidfield-is-documentation-only.md): `@GdprErasable.subjectIdField` is doc surfaced in DPIA, not a runtime lookup driver.
 - [ADR-0008](docs/adr/0008-consent-and-portability-deferred.md) [proposed]: Article 7 consent and Article 20 portability deferred to a future minor.
 
+## Living requirements (tracegate)
+
+This repo dogfoods [**tracegate**](https://github.com/iambilotta/tracegate): every test is
+treated as a requirement, and the catalog is generated from the test suite, never written by
+hand. Each test-bearing module carries its own `_generated/` catalog (`requirements.md`,
+`requirements-by-us.md`, `requirements.json`, plus as-built sections like `http-endpoints.md`,
+`modules.md` and `config.md` where a framework is detected). The catalog covers
+**80 requirements** across the four test-bearing modules (`spring-gdpr-starter`,
+`spring-gdpr-processor`, `spring-gdpr-starter-test`, `examples/quickstart-postgres`).
+
+The catalog is **generated, never hand-edited**. To change a requirement, change the test
+(rename it, or add a `@spec.given` / `@spec.when` / `@spec.then` javadoc) and regenerate:
+
+```bash
+make tracegate-install   # one-off: install tracegate, pinned to the CI commit
+make requirements        # regenerate every module's _generated/ catalog
+make requirements-check  # drift-gate: exit 2 if the catalog drifted from the code
+```
+
+CI runs the gate (the `tracegate` job in
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml)), so the committed catalog can never
+silently fall out of sync with the code. tracegate is pinned to a commit in both the Makefile
+(`TRACEGATE_REF`) and the workflow. Which modules are catalogued, and their stable labels, is
+pinned in [`tracegate.toml`](tracegate.toml) (stable labels keep the gate deterministic
+regardless of the checkout directory name); add an `[[apps]]` block there when a new
+test-bearing module appears.
+
 ## Reality check
 
 What this library does NOT do, in one place. Read this before adopting in production.

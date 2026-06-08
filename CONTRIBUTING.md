@@ -59,6 +59,24 @@ mvn -B clean verify
 
 Add `-Dspring-gdpr.it=true` to run the Postgres integration tests (needs Docker API >= 1.40).
 
+### Living requirements (tracegate)
+
+The per-module `_generated/` catalog is produced by
+[tracegate](https://github.com/iambilotta/tracegate) from the test suite and is
+**generated, never hand-edited**. If a change touches tests, regenerate the catalog and
+commit it; CI drift-gates it (the `tracegate` job) and will fail the PR if the committed
+catalog disagrees with the code:
+
+```bash
+make tracegate-install   # one-off
+make requirements        # regenerate the catalog
+make requirements-check  # what CI runs (exit 2 on drift)
+```
+
+To change a requirement, change the test (rename it, or add a `@spec.given` /
+`@spec.when` / `@spec.then` javadoc), then `make requirements`. See
+[`tracegate.toml`](tracegate.toml) to register a new test-bearing module.
+
 ## Code of conduct
 
 Read [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). Short version: be a normal adult.

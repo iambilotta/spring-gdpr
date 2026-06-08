@@ -1,0 +1,38 @@
+# tracegate config — pins the as-built / requirements catalog for this repo.
+#
+# Why explicit apps instead of auto-detect: the catalog is committed and CI
+# drift-gates it (`tracegate . --check`). Auto-detection derives a Maven module's
+# label from its directory name, and the repo-root "app" (the aggregator pom, which
+# has no tests) would take its label from the *checkout directory* name — which is
+# not stable across machines/CI (e.g. `spring-gdpr-tg` in a worktree vs `spring-gdpr`
+# on a fresh clone) and would make the gate report false drift. Listing the
+# test-bearing modules explicitly makes the catalog deterministic everywhere.
+#
+# Regenerate:  make requirements      (writes each module's _generated/)
+# Drift-gate:  make requirements-check (what CI runs)
+#
+# This file only OVERRIDES detection; tracegate never requires it. When a new
+# test-bearing module is added, add an [[apps]] block for it here.
+
+[[apps]]
+path = "spring-gdpr-starter"
+label = "spring-gdpr-starter"
+languages = ["java"]
+frameworks = ["spring"]
+
+[[apps]]
+path = "spring-gdpr-processor"
+label = "spring-gdpr-processor"
+languages = ["java"]
+
+[[apps]]
+path = "spring-gdpr-starter-test"
+label = "spring-gdpr-starter-test"
+languages = ["java"]
+frameworks = ["spring"]
+
+[[apps]]
+path = "examples/quickstart-postgres"
+label = "spring-gdpr-example-quickstart-postgres"
+languages = ["java"]
+frameworks = ["spring"]

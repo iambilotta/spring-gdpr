@@ -1,0 +1,108 @@
+{
+  "tracegate": {
+    "schema": 1,
+    "kind": "requirements-catalog"
+  },
+  "label": "spring-gdpr-example-quickstart-postgres",
+  "coverage": {
+    "total": 5,
+    "with_complete_spec": 0,
+    "by_category": {
+      "FR": 5
+    }
+  },
+  "requirements": [
+    {
+      "id": "FR-(root).QuickstartE2E#accessExportReturnsTheSubjectsClassifiedFieldsForDpo",
+      "category": "FR",
+      "module": "(root)",
+      "unit": "QuickstartE2E",
+      "method": "accessExportReturnsTheSubjectsClassifiedFieldsForDpo",
+      "file": "examples/quickstart-postgres/src/test/java/com/example/gdprdemo/QuickstartE2ETest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-(root).QuickstartE2E#createCustomerAndFetchHits200",
+      "category": "FR",
+      "module": "(root)",
+      "unit": "QuickstartE2E",
+      "method": "createCustomerAndFetchHits200",
+      "file": "examples/quickstart-postgres/src/test/java/com/example/gdprdemo/QuickstartE2ETest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-(root).QuickstartE2E#erasureEndpointAccessibleToDpoRole",
+      "category": "FR",
+      "module": "(root)",
+      "unit": "QuickstartE2E",
+      "method": "erasureEndpointAccessibleToDpoRole",
+      "file": "examples/quickstart-postgres/src/test/java/com/example/gdprdemo/QuickstartE2ETest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-(root).QuickstartE2E#erasureEndpointForbiddenForNonDpoRole",
+      "category": "FR",
+      "module": "(root)",
+      "unit": "QuickstartE2E",
+      "method": "erasureEndpointForbiddenForNonDpoRole",
+      "file": "examples/quickstart-postgres/src/test/java/com/example/gdprdemo/QuickstartE2ETest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-(root).QuickstartE2E#unauthenticatedAccessIsRejected",
+      "category": "FR",
+      "module": "(root)",
+      "unit": "QuickstartE2E",
+      "method": "unauthenticatedAccessIsRejected",
+      "file": "examples/quickstart-postgres/src/test/java/com/example/gdprdemo/QuickstartE2ETest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    }
+  ],
+  "sections": [
+    "config",
+    "http-endpoints",
+    "modules",
+    "ports",
+    "templates"
+  ]
+}

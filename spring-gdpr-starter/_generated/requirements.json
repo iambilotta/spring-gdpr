@@ -1,0 +1,1213 @@
+{
+  "tracegate": {
+    "schema": 1,
+    "kind": "requirements-catalog"
+  },
+  "label": "spring-gdpr-starter",
+  "coverage": {
+    "total": 70,
+    "with_complete_spec": 35,
+    "by_category": {
+      "FR": 70
+    }
+  },
+  "requirements": [
+    {
+      "id": "FR-access.AccessExportService#carriesTheCategoryOfEachExportedField",
+      "category": "FR",
+      "module": "access",
+      "unit": "AccessExportService",
+      "method": "carriesTheCategoryOfEachExportedField",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/access/AccessExportServiceTest.java",
+      "spec": {
+        "given": "any subject's classified field",
+        "when": "the export is assembled",
+        "then": "the declared category travels with the field (so the dossier is grouped by category)",
+        "adr": "",
+        "us": "REQ-GDPR-019",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-access.AccessExportService#doesNotExportNonPersonalFields",
+      "category": "FR",
+      "module": "access",
+      "unit": "AccessExportService",
+      "method": "doesNotExportNonPersonalFields",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/access/AccessExportServiceTest.java",
+      "spec": {
+        "given": "a non-classified field on the subject's object",
+        "when": "the export is assembled",
+        "then": "the non-personal field is NOT included (Art. 15 covers personal data only)",
+        "adr": "",
+        "us": "REQ-GDPR-019",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-access.AccessExportService#exportsTheClassifiedFieldsOfTheSubjectsObjects",
+      "category": "FR",
+      "module": "access",
+      "unit": "AccessExportService",
+      "method": "exportsTheClassifiedFieldsOfTheSubjectsObjects",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/access/AccessExportServiceTest.java",
+      "spec": {
+        "given": "a provider returning a subject's Customer with two classified fields",
+        "when": "the access export is assembled for that subject",
+        "then": "the export carries one entry per classified field, with name, value and category",
+        "adr": "",
+        "us": "REQ-GDPR-019",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-access.AccessExportService#returnsAnEmptyExportForAnUnknownSubject",
+      "category": "FR",
+      "module": "access",
+      "unit": "AccessExportService",
+      "method": "returnsAnEmptyExportForAnUnknownSubject",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/access/AccessExportServiceTest.java",
+      "spec": {
+        "given": "a subject for whom no provider returns any object",
+        "when": "the export is assembled",
+        "then": "an empty export is returned for that subject id (not null, not an error)",
+        "adr": "",
+        "us": "REQ-GDPR-019",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-access.JdbcSubjectDataProvider#feedsTheAccessExportWithClassifiedFields",
+      "category": "FR",
+      "module": "access",
+      "unit": "JdbcSubjectDataProvider",
+      "method": "feedsTheAccessExportWithClassifiedFields",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/access/JdbcSubjectDataProviderTest.java",
+      "spec": {
+        "given": "the JDBC subject-data provider behind the AccessExportService",
+        "when": "an export is assembled for the subject",
+        "then": "the dossier carries the classified field value from the mapped row",
+        "adr": "",
+        "us": "US-DX-002-art15-export-endpoint",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-access.JdbcSubjectDataProvider#rejectsNonIdentifierNames",
+      "category": "FR",
+      "module": "access",
+      "unit": "JdbcSubjectDataProvider",
+      "method": "rejectsNonIdentifierNames",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/access/JdbcSubjectDataProviderTest.java",
+      "spec": {
+        "given": "a SQL-injection payload in the table or subject-id column name",
+        "when": "a JDBC subject-data provider is constructed",
+        "then": "construction fails: identifiers are whitelist-validated",
+        "adr": "",
+        "us": "US-DX-003-jdbc-spi-base-classes",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-access.JdbcSubjectDataProvider#returnsTheSubjectsRowsMappedToPersonalDataObjects",
+      "category": "FR",
+      "module": "access",
+      "unit": "JdbcSubjectDataProvider",
+      "method": "returnsTheSubjectsRowsMappedToPersonalDataObjects",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/access/JdbcSubjectDataProviderTest.java",
+      "spec": {
+        "given": "a customers table with the subject's row",
+        "when": "the JDBC subject-data provider fetches by the subject-id column",
+        "then": "it returns the mapped object(s) for that subject only",
+        "adr": "",
+        "us": "US-DX-003-jdbc-spi-base-classes",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-audit.AsyncAuditSinkDecorator#findBySubjectDelegatesSynchronously",
+      "category": "FR",
+      "module": "audit",
+      "unit": "AsyncAuditSinkDecorator",
+      "method": "findBySubjectDelegatesSynchronously",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/AsyncAuditSinkDecoratorTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.AsyncAuditSinkDecorator#rejectsInvalidThreadCount",
+      "category": "FR",
+      "module": "audit",
+      "unit": "AsyncAuditSinkDecorator",
+      "method": "rejectsInvalidThreadCount",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/AsyncAuditSinkDecoratorTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.AsyncAuditSinkDecorator#saturatedQueueDropsNewestAndCounts",
+      "category": "FR",
+      "module": "audit",
+      "unit": "AsyncAuditSinkDecorator",
+      "method": "saturatedQueueDropsNewestAndCounts",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/AsyncAuditSinkDecoratorTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.AsyncAuditSinkDecorator#sinkFailureIsAbsorbedAndCounted",
+      "category": "FR",
+      "module": "audit",
+      "unit": "AsyncAuditSinkDecorator",
+      "method": "sinkFailureIsAbsorbedAndCounted",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/AsyncAuditSinkDecoratorTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.AsyncAuditSinkDecorator#writesAreDispatchedToWorkerThread",
+      "category": "FR",
+      "module": "audit",
+      "unit": "AsyncAuditSinkDecorator",
+      "method": "writesAreDispatchedToWorkerThread",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/AsyncAuditSinkDecoratorTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.AuditSinkMetrics#registersThreeGauges",
+      "category": "FR",
+      "module": "audit",
+      "unit": "AuditSinkMetrics",
+      "method": "registersThreeGauges",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/AuditSinkMetricsTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.AuditSinkMetrics#submittedGaugeReflectsLiveCount",
+      "category": "FR",
+      "module": "audit",
+      "unit": "AuditSinkMetrics",
+      "method": "submittedGaugeReflectsLiveCount",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/AuditSinkMetricsTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.JdbcAuditSink#failsFastWhenTableMissingAndAutoCreateOff",
+      "category": "FR",
+      "module": "audit",
+      "unit": "JdbcAuditSink",
+      "method": "failsFastWhenTableMissingAndAutoCreateOff",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/JdbcAuditSinkTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.JdbcAuditSink#filtersByTimeWindow",
+      "category": "FR",
+      "module": "audit",
+      "unit": "JdbcAuditSink",
+      "method": "filtersByTimeWindow",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/JdbcAuditSinkTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.JdbcAuditSink#rejectsTableNamesThatLookLikeSqlInjection",
+      "category": "FR",
+      "module": "audit",
+      "unit": "JdbcAuditSink",
+      "method": "rejectsTableNamesThatLookLikeSqlInjection",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/JdbcAuditSinkTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.JdbcAuditSink#schemaIsIdempotent",
+      "category": "FR",
+      "module": "audit",
+      "unit": "JdbcAuditSink",
+      "method": "schemaIsIdempotent",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/JdbcAuditSinkTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.JdbcAuditSink#worksWhenTableExistsAndAutoCreateOff",
+      "category": "FR",
+      "module": "audit",
+      "unit": "JdbcAuditSink",
+      "method": "worksWhenTableExistsAndAutoCreateOff",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/JdbcAuditSinkTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.JdbcAuditSink#writeAndQueryRoundTrip",
+      "category": "FR",
+      "module": "audit",
+      "unit": "JdbcAuditSink",
+      "method": "writeAndQueryRoundTrip",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/JdbcAuditSinkTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.JdbcAuditSinkPostgres#failsFastWhenTableMissingAndAutoCreateOff",
+      "category": "FR",
+      "module": "audit",
+      "unit": "JdbcAuditSinkPostgres",
+      "method": "failsFastWhenTableMissingAndAutoCreateOff",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/JdbcAuditSinkPostgresIT.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.JdbcAuditSinkPostgres#writesAndReadsAgainstMigrationApplied",
+      "category": "FR",
+      "module": "audit",
+      "unit": "JdbcAuditSinkPostgres",
+      "method": "writesAndReadsAgainstMigrationApplied",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/JdbcAuditSinkPostgresIT.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.LegalBasisMapping#criminalConvictionsProducesArt10Reference",
+      "category": "FR",
+      "module": "audit",
+      "unit": "LegalBasisMapping",
+      "method": "criminalConvictionsProducesArt10Reference",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/LegalBasisMappingTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.LegalBasisMapping#explicitArticleOverrideWins",
+      "category": "FR",
+      "module": "audit",
+      "unit": "LegalBasisMapping",
+      "method": "explicitArticleOverrideWins",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/LegalBasisMappingTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.LegalBasisMapping#nullAnnotationReturnsNull",
+      "category": "FR",
+      "module": "audit",
+      "unit": "LegalBasisMapping",
+      "method": "nullAnnotationReturnsNull",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/LegalBasisMappingTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.LegalBasisMapping#ordinaryDataReturnsArticle6Reference",
+      "category": "FR",
+      "module": "audit",
+      "unit": "LegalBasisMapping",
+      "method": "ordinaryDataReturnsArticle6Reference",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/LegalBasisMappingTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.LegalBasisMapping#specialCategoryWithArt9ProducesCompositeReference",
+      "category": "FR",
+      "module": "audit",
+      "unit": "LegalBasisMapping",
+      "method": "specialCategoryWithArt9ProducesCompositeReference",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/LegalBasisMappingTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.LegalBasisMapping#specialCategoryWithoutArt9OrArt10FlagsMissing",
+      "category": "FR",
+      "module": "audit",
+      "unit": "LegalBasisMapping",
+      "method": "specialCategoryWithoutArt9OrArt10FlagsMissing",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/LegalBasisMappingTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.PersonalDataAccessAdvisor#deliveriesReachTheSink",
+      "category": "FR",
+      "module": "audit",
+      "unit": "PersonalDataAccessAdvisor",
+      "method": "deliveriesReachTheSink",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/PersonalDataAccessAdvisorTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-audit.PersonalDataAccessAdvisor#sinkFailureIsAbsorbedNotPropagated",
+      "category": "FR",
+      "module": "audit",
+      "unit": "PersonalDataAccessAdvisor",
+      "method": "sinkFailureIsAbsorbedNotPropagated",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/audit/PersonalDataAccessAdvisorTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-autoconfig.GdprAutoConfiguration#defaultsToSlf4jSinkWhenJdbcDisabled",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "GdprAutoConfiguration",
+      "method": "defaultsToSlf4jSinkWhenJdbcDisabled",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/GdprAutoConfigurationTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-autoconfig.GdprAutoConfiguration#disablesEverythingWhenSpringGdprEnabledFalse",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "GdprAutoConfiguration",
+      "method": "disablesEverythingWhenSpringGdprEnabledFalse",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/GdprAutoConfigurationTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-autoconfig.GdprAutoConfiguration#fallsBackToSlf4jWhenJdbcEnabledButNoDataSource",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "GdprAutoConfiguration",
+      "method": "fallsBackToSlf4jWhenJdbcEnabledButNoDataSource",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/GdprAutoConfigurationTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-autoconfig.GdprAutoConfiguration#respectsUserProvidedAuditSinkBean",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "GdprAutoConfiguration",
+      "method": "respectsUserProvidedAuditSinkBean",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/GdprAutoConfigurationTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-autoconfig.GdprAutoConfiguration#usesJdbcSinkWhenEnabledAndDataSourcePresent",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "GdprAutoConfiguration",
+      "method": "usesJdbcSinkWhenEnabledAndDataSourcePresent",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/GdprAutoConfigurationTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-autoconfig.GdprAutoConfiguration#wiresTheAccessExportService",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "GdprAutoConfiguration",
+      "method": "wiresTheAccessExportService",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/GdprAutoConfigurationTest.java",
+      "spec": {
+        "given": "the GDPR autoconfiguration on the context",
+        "when": "the context starts",
+        "then": "an AccessExportService bean is wired (Art. 15 export, REQ-GDPR-019), even with no SubjectDataProvider registered (it just exports nothing)",
+        "adr": "",
+        "us": "REQ-GDPR-019",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-autoconfig.GdprAutoConfiguration#wrapsSinkInAsyncDecoratorByDefault",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "GdprAutoConfiguration",
+      "method": "wrapsSinkInAsyncDecoratorByDefault",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/GdprAutoConfigurationTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-erasure.CryptoShreddingErasure#droppingTheKeyRendersThePiiUnrecoverableWhileTheEventStaysImmutable",
+      "category": "FR",
+      "module": "erasure",
+      "unit": "CryptoShreddingErasure",
+      "method": "droppingTheKeyRendersThePiiUnrecoverableWhileTheEventStaysImmutable",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/CryptoShreddingErasureTest.java",
+      "spec": {
+        "given": "an event whose PII payload was encrypted under a subject's key",
+        "when": "the subject's key is dropped (the erasure act) and a replay re-reads the event",
+        "then": "the PII is no longer recoverable from the raw payload, while the event bytes are unchanged",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.CryptoShreddingErasure#erasureIsPerSubjectAndDoesNotAffectOtherSubjects",
+      "category": "FR",
+      "module": "erasure",
+      "unit": "CryptoShreddingErasure",
+      "method": "erasureIsPerSubjectAndDoesNotAffectOtherSubjects",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/CryptoShreddingErasureTest.java",
+      "spec": {
+        "given": "two subjects, each with their own per-subject key",
+        "when": "one subject is erased (key dropped)",
+        "then": "the other subject's data is still fully recoverable (per-subject key granularity)",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.CryptoShreddingErasure#erasurePreservesTheAuditTrailAsARecordedFact",
+      "category": "FR",
+      "module": "erasure",
+      "unit": "CryptoShreddingErasure",
+      "method": "erasurePreservesTheAuditTrailAsARecordedFact",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/CryptoShreddingErasureTest.java",
+      "spec": {
+        "given": "a subject whose key still exists",
+        "when": "the erasure runs",
+        "then": "the key is dropped AND an audit record of the erasure is preserved (who/when/why)",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.CryptoShreddingErasure#replayAfterErasureIsIdempotentAndExposesNoPii",
+      "category": "FR",
+      "module": "erasure",
+      "unit": "CryptoShreddingErasure",
+      "method": "replayAfterErasureIsIdempotentAndExposesNoPii",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/CryptoShreddingErasureTest.java",
+      "spec": {
+        "given": "a stream of events for a subject whose key was dropped",
+        "when": "the projection is rebuilt by replaying the stream twice",
+        "then": "both replays yield the same read model with the PII blank (idempotent under replay)",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.ErasureService#aggregatesAffectedCountsByType",
+      "category": "FR",
+      "module": "erasure",
+      "unit": "ErasureService",
+      "method": "aggregatesAffectedCountsByType",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/ErasureServiceTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-erasure.ErasureService#invokesHandlersInOrderAscending",
+      "category": "FR",
+      "module": "erasure",
+      "unit": "ErasureService",
+      "method": "invokesHandlersInOrderAscending",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/ErasureServiceTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-erasure.ErasureService#rejectsBlankSubjectId",
+      "category": "FR",
+      "module": "erasure",
+      "unit": "ErasureService",
+      "method": "rejectsBlankSubjectId",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/ErasureServiceTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-erasure.JdbcErasureHandler#deletesRowsMatchingTheSubjectIdColumnAndReturnsTheCount",
+      "category": "FR",
+      "module": "erasure",
+      "unit": "JdbcErasureHandler",
+      "method": "deletesRowsMatchingTheSubjectIdColumnAndReturnsTheCount",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/JdbcErasureHandlerTest.java",
+      "spec": {
+        "given": "a customers table with three rows, two owned by the subject",
+        "when": "the JDBC erasure handler deletes by the subject-id column",
+        "then": "it returns the affected-row count and only the subject's rows are gone",
+        "adr": "",
+        "us": "US-DX-003-jdbc-spi-base-classes",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.JdbcErasureHandler#exposesTheTypedEntityClassAndStrategy",
+      "category": "FR",
+      "module": "erasure",
+      "unit": "JdbcErasureHandler",
+      "method": "exposesTheTypedEntityClassAndStrategy",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/JdbcErasureHandlerTest.java",
+      "spec": {
+        "given": "a JDBC erasure handler built for a domain type",
+        "when": "the orchestrator reads its metadata",
+        "then": "it reports the typed entity class and configured strategy (used in the audit row)",
+        "adr": "",
+        "us": "US-DX-003-jdbc-spi-base-classes",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.JdbcErasureHandler#rejectsNonIdentifierTableOrColumnNames",
+      "category": "FR",
+      "module": "erasure",
+      "unit": "JdbcErasureHandler",
+      "method": "rejectsNonIdentifierTableOrColumnNames",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/JdbcErasureHandlerTest.java",
+      "spec": {
+        "given": "a table or column name carrying a SQL-injection payload",
+        "when": "a JDBC erasure handler is constructed",
+        "then": "construction fails: identifiers are whitelist-validated, not interpolated blindly",
+        "adr": "",
+        "us": "US-DX-003-jdbc-spi-base-classes",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.crypto.AesGcmCryptoShredder#cannotDecryptUnderAnotherSubjectsKey",
+      "category": "FR",
+      "module": "erasure.crypto",
+      "unit": "AesGcmCryptoShredder",
+      "method": "cannotDecryptUnderAnotherSubjectsKey",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/crypto/AesGcmCryptoShredderTest.java",
+      "spec": {
+        "given": "a ciphertext sealed under one subject's key",
+        "when": "it is decrypted under a different subject's key",
+        "then": "decryption fails closed (empty): keys are not interchangeable across subjects",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.crypto.AesGcmCryptoShredder#failsClosedOnMalformedInput",
+      "category": "FR",
+      "module": "erasure.crypto",
+      "unit": "AesGcmCryptoShredder",
+      "method": "failsClosedOnMalformedInput",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/crypto/AesGcmCryptoShredderTest.java",
+      "spec": {
+        "given": "garbage bytes that are not a valid ciphertext",
+        "when": "decryption is attempted",
+        "then": "it returns empty instead of throwing (fail closed on malformed input)",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.crypto.AesGcmCryptoShredder#failsClosedOnTamperedCiphertext",
+      "category": "FR",
+      "module": "erasure.crypto",
+      "unit": "AesGcmCryptoShredder",
+      "method": "failsClosedOnTamperedCiphertext",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/crypto/AesGcmCryptoShredderTest.java",
+      "spec": {
+        "given": "a valid ciphertext",
+        "when": "a single byte of it is flipped (tampering) and decryption is attempted",
+        "then": "decryption fails closed (empty), never a partial plaintext (GCM authentication)",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.crypto.AesGcmCryptoShredder#usesAFreshIvPerRecordSoCiphertextsDiffer",
+      "category": "FR",
+      "module": "erasure.crypto",
+      "unit": "AesGcmCryptoShredder",
+      "method": "usesAFreshIvPerRecordSoCiphertextsDiffer",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/crypto/AesGcmCryptoShredderTest.java",
+      "spec": {
+        "given": "a plaintext encrypted twice under the same subject key",
+        "when": "the two ciphertexts are compared",
+        "then": "they differ (fresh random IV per record) yet both decrypt to the plaintext",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.crypto.JdbcSubjectKeyStore#dropIsPerSubject",
+      "category": "FR",
+      "module": "erasure.crypto",
+      "unit": "JdbcSubjectKeyStore",
+      "method": "dropIsPerSubject",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/crypto/JdbcSubjectKeyStoreTest.java",
+      "spec": {
+        "given": "two subjects with keys",
+        "when": "one is erased",
+        "then": "the other's key is untouched (per-subject granularity at the store level)",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.crypto.JdbcSubjectKeyStore#dropOfNeverMintedSubjectStillTombstones",
+      "category": "FR",
+      "module": "erasure.crypto",
+      "unit": "JdbcSubjectKeyStore",
+      "method": "dropOfNeverMintedSubjectStillTombstones",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/crypto/JdbcSubjectKeyStoreTest.java",
+      "spec": {
+        "given": "a subject that never had a key",
+        "when": "drop is called for it (idempotent erasure)",
+        "then": "a tombstone is written so the subject can never be minted afterwards",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.crypto.JdbcSubjectKeyStore#dropRemovesTheKey",
+      "category": "FR",
+      "module": "erasure.crypto",
+      "unit": "JdbcSubjectKeyStore",
+      "method": "dropRemovesTheKey",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/crypto/JdbcSubjectKeyStoreTest.java",
+      "spec": {
+        "given": "a subject with a minted key",
+        "when": "the key is dropped (erasure)",
+        "then": "keyFor is empty, exists is false, and the bytes are gone",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.crypto.JdbcSubjectKeyStore#erasedSubjectCannotBeReMinted",
+      "category": "FR",
+      "module": "erasure.crypto",
+      "unit": "JdbcSubjectKeyStore",
+      "method": "erasedSubjectCannotBeReMinted",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/crypto/JdbcSubjectKeyStoreTest.java",
+      "spec": {
+        "given": "a subject whose key was dropped (erased)",
+        "when": "getOrCreate is called again for the same subject",
+        "then": "it refuses to mint a new key (the tombstone prevents un-erasure)",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.crypto.JdbcSubjectKeyStore#mintsAndReadsBackAStableKey",
+      "category": "FR",
+      "module": "erasure.crypto",
+      "unit": "JdbcSubjectKeyStore",
+      "method": "mintsAndReadsBackAStableKey",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/crypto/JdbcSubjectKeyStoreTest.java",
+      "spec": {
+        "given": "a JDBC key store on a fresh schema",
+        "when": "a subject's key is minted then read back",
+        "then": "getOrCreate is idempotent and keyFor returns the same key bytes",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-logging.PiiMasker#classifiedFieldValuesNeverAppearInClearText",
+      "category": "FR",
+      "module": "logging",
+      "unit": "PiiMasker",
+      "method": "classifiedFieldValuesNeverAppearInClearText",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/logging/PiiMaskerTest.java",
+      "spec": {
+        "given": "an object whose name + email fields carry {@code @GdprPersonalData}",
+        "when": "the masker renders it",
+        "then": "neither personal-data value appears in clear text in the output",
+        "adr": "",
+        "us": "REQ-GDPR-018",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-logging.PiiMasker#nonPersonalFieldsArePreserved",
+      "category": "FR",
+      "module": "logging",
+      "unit": "PiiMasker",
+      "method": "nonPersonalFieldsArePreserved",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/logging/PiiMaskerTest.java",
+      "spec": {
+        "given": "an object with a non-personal {@code id} field",
+        "when": "the masker renders it",
+        "then": "the non-personal value is preserved (only PII is masked, not the whole object)",
+        "adr": "",
+        "us": "REQ-GDPR-018",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-logging.PiiMasker#reportsWhenAnObjectCarriesNoPersonalData",
+      "category": "FR",
+      "module": "logging",
+      "unit": "PiiMasker",
+      "method": "reportsWhenAnObjectCarriesNoPersonalData",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/logging/PiiMaskerTest.java",
+      "spec": {
+        "given": "a value that carries no {@code @GdprPersonalData} fields at all",
+        "when": "the masker is asked whether it must mask it",
+        "then": "it reports false, so the converter can skip the reflection cost",
+        "adr": "",
+        "us": "REQ-GDPR-018",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-logging.PiiMaskingConverter#rendersAMaskedMessageInTheLogOutput",
+      "category": "FR",
+      "module": "logging",
+      "unit": "PiiMaskingConverter",
+      "method": "rendersAMaskedMessageInTheLogOutput",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/logging/PiiMaskingConverterTest.java",
+      "spec": {
+        "given": "a Logback logger whose pattern uses the registered %piimsg converter",
+        "when": "an object carrying a @GdprPersonalData field is logged as a message argument",
+        "then": "the captured log line masks the PII value but keeps the non-personal field",
+        "adr": "",
+        "us": "REQ-GDPR-018",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-retention.JdbcRetentionTarget#anonymizesPersonalColumnsOnDueRowsInsteadOfDeleting",
+      "category": "FR",
+      "module": "retention",
+      "unit": "JdbcRetentionTarget",
+      "method": "anonymizesPersonalColumnsOnDueRowsInsteadOfDeleting",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/retention/JdbcRetentionTargetTest.java",
+      "spec": {
+        "given": "two rows older than the cutoff, with an ANONYMIZE strategy nulling full_name",
+        "when": "the JDBC retention target applies the due sweep",
+        "then": "the old rows stay but their personal-data column is nulled; the fresh row is untouched",
+        "adr": "",
+        "us": "US-DX-003-jdbc-spi-base-classes",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-retention.JdbcRetentionTarget#deletesRowsOlderThanCutoffAndCountsThem",
+      "category": "FR",
+      "module": "retention",
+      "unit": "JdbcRetentionTarget",
+      "method": "deletesRowsOlderThanCutoffAndCountsThem",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/retention/JdbcRetentionTargetTest.java",
+      "spec": {
+        "given": "two rows older than the cutoff and one fresh, with a DELETE strategy",
+        "when": "the JDBC retention target counts then applies the due sweep",
+        "then": "countDue and applyDue both report two and only the fresh row survives",
+        "adr": "",
+        "us": "US-DX-003-jdbc-spi-base-classes",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-retention.JdbcRetentionTarget#rejectsNonIdentifierNames",
+      "category": "FR",
+      "module": "retention",
+      "unit": "JdbcRetentionTarget",
+      "method": "rejectsNonIdentifierNames",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/retention/JdbcRetentionTargetTest.java",
+      "spec": {
+        "given": "a SQL-injection payload in the table, timestamp, or personal-data column name",
+        "when": "a JDBC retention target is constructed",
+        "then": "construction fails: every identifier is whitelist-validated",
+        "adr": "",
+        "us": "US-DX-003-jdbc-spi-base-classes",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-retention.RetentionScheduler#runWithOffsetUsesCallerProvidedDuration",
+      "category": "FR",
+      "module": "retention",
+      "unit": "RetentionScheduler",
+      "method": "runWithOffsetUsesCallerProvidedDuration",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/retention/RetentionSchedulerTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-retention.RetentionScheduler#sweepAppliesEachTargetWithCutoffDerivedFromInjectedClock",
+      "category": "FR",
+      "module": "retention",
+      "unit": "RetentionScheduler",
+      "method": "sweepAppliesEachTargetWithCutoffDerivedFromInjectedClock",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/retention/RetentionSchedulerTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-retention.RetentionScheduler#targetCountReflectsRegisteredTargets",
+      "category": "FR",
+      "module": "retention",
+      "unit": "RetentionScheduler",
+      "method": "targetCountReflectsRegisteredTargets",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/retention/RetentionSchedulerTest.java",
+      "spec": {
+        "given": "",
+        "when": "",
+        "then": "",
+        "adr": "",
+        "us": "",
+        "ac": "",
+        "complete": false
+      }
+    },
+    {
+      "id": "FR-web.GdprController#blankSubjectIdOnExportIs400NotRaw500",
+      "category": "FR",
+      "module": "web",
+      "unit": "GdprController",
+      "method": "blankSubjectIdOnExportIs400NotRaw500",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/web/GdprControllerTest.java",
+      "spec": {
+        "given": "an access-export endpoint",
+        "when": "a client GETs the export with a blank subject id",
+        "then": "the request is rejected with 400 Bad Request, not a raw 500",
+        "adr": "",
+        "us": "US-DX-001-honest-erasure-error-contract",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-web.GdprController#exposesTheArticle15AccessExportAsAnEndpoint",
+      "category": "FR",
+      "module": "web",
+      "unit": "GdprController",
+      "method": "exposesTheArticle15AccessExportAsAnEndpoint",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/web/GdprControllerTest.java",
+      "spec": {
+        "given": "an access-export endpoint and a registered provider that returns a personal-data object",
+        "when": "a client GETs /gdpr/access/export with the subject id",
+        "then": "the Article 15 dossier is returned as 200 with the subject's classified fields",
+        "adr": "",
+        "us": "US-DX-002-art15-export-endpoint",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-web.GdprController#throwingHandlerSurfacesAsServerErrorNot207",
+      "category": "FR",
+      "module": "web",
+      "unit": "GdprController",
+      "method": "throwingHandlerSurfacesAsServerErrorNot207",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/web/GdprControllerTest.java",
+      "spec": {
+        "given": "an erasure endpoint and a handler that throws while erasing",
+        "when": "a client DELETEs the subject",
+        "then": "the handler exception propagates (fail-fast), never swallowed into a 207 success",
+        "adr": "",
+        "us": "US-DX-001-honest-erasure-error-contract",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-web.GdprSecurityWarning#warnsThatTheGdprSurfaceIsOpenByDefault",
+      "category": "FR",
+      "module": "web",
+      "unit": "GdprSecurityWarning",
+      "method": "warnsThatTheGdprSurfaceIsOpenByDefault",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/web/GdprSecurityWarningTest.java",
+      "spec": {
+        "given": "the GDPR web surface is about to be mounted at a base path",
+        "when": "the startup security warning runs",
+        "then": "a single WARN names the open base path and tells the adopter to wire Spring Security",
+        "adr": "",
+        "us": "US-DX-004-secure-by-default-signal",
+        "ac": "",
+        "complete": true
+      }
+    }
+  ],
+  "sections": [
+    "config",
+    "http-endpoints",
+    "modules",
+    "ports",
+    "templates"
+  ]
+}

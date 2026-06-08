@@ -1,0 +1,68 @@
+{
+  "tracegate": {
+    "schema": 1,
+    "kind": "requirements-catalog"
+  },
+  "label": "spring-gdpr-processor",
+  "coverage": {
+    "total": 3,
+    "with_complete_spec": 3,
+    "by_category": {
+      "FR": 3
+    }
+  },
+  "requirements": [
+    {
+      "id": "FR-(root).ProcessingRecordCategory#csvRowListsTheDistinctTouchedCategoriesSortedAndPipeJoined",
+      "category": "FR",
+      "module": "(root)",
+      "unit": "ProcessingRecordCategory",
+      "method": "csvRowListsTheDistinctTouchedCategoriesSortedAndPipeJoined",
+      "file": "spring-gdpr-processor/src/test/java/com/iambilotta/gdpr/processor/ProcessingRecordCategoryTest.java",
+      "spec": {
+        "given": "a ROPA record that touched an IDENTITY field and a CONTACT field",
+        "when": "the CSV row is rendered",
+        "then": "the categories column lists the distinct categories, sorted and pipe-joined",
+        "adr": "",
+        "us": "REQ-GDPR-015",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-(root).ProcessingRecordCategory#markdownRowSurfacesTheCategory",
+      "category": "FR",
+      "module": "(root)",
+      "unit": "ProcessingRecordCategory",
+      "method": "markdownRowSurfacesTheCategory",
+      "file": "spring-gdpr-processor/src/test/java/com/iambilotta/gdpr/processor/ProcessingRecordCategoryTest.java",
+      "spec": {
+        "given": "a ROPA record that touched a FINANCIAL field",
+        "when": "the markdown row is rendered",
+        "then": "the category appears in the row",
+        "adr": "",
+        "us": "REQ-GDPR-015",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-(root).ProcessingRecordCategory#uncategorisedFieldsLeaveTheCategoriesColumnEmpty",
+      "category": "FR",
+      "module": "(root)",
+      "unit": "ProcessingRecordCategory",
+      "method": "uncategorisedFieldsLeaveTheCategoriesColumnEmpty",
+      "file": "spring-gdpr-processor/src/test/java/com/iambilotta/gdpr/processor/ProcessingRecordCategoryTest.java",
+      "spec": {
+        "given": "a ROPA record whose personal-data fields declared no category",
+        "when": "the CSV row is rendered",
+        "then": "the categories column is empty (backward-compatible: no category is not an error)",
+        "adr": "",
+        "us": "REQ-GDPR-015",
+        "ac": "",
+        "complete": true
+      }
+    }
+  ],
+  "sections": []
+}
