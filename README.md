@@ -253,6 +253,49 @@ SubjectDataProvider customerExport(DataSource ds) {
 
 Table and column names are validated as bare SQL identifiers at construction (they cannot be JDBC-bound), so a typo or a hostile value fails fast and never reaches the database; the subject id and the cutoff are always `?`-bound. When the case is anything richer (FK cascade in a transaction, pseudonymise with a deterministic token, a non-JDBC store), implement the raw SPI interface directly.
 
+## Erasing personal data: forgettable payload (primary), crypto-shredding (exception)
+
+For a **mutable** store the handler above just `DELETE`s the row. The hard case is an **append-only / event-sourced** store, where the golden rule is "never edit or delete an event": the event that carries the PII cannot be deleted. The library ships two mechanisms, and is opinionated about which to reach for.
+
+### The primary pattern: forgettable payload (external PII store)
+
+Keep the personal data **out of the immutable carrier**. A field marked `@GdprPersonalData(storage = FORGETTABLE_PAYLOAD)` is not stored inline on the domain object or event; its value lives in a dedicated **mutable external store** keyed by `(subjectId, fieldKey)`, and the carrier holds only a **reference** (`urn:gdpr:fp:<subjectId>:<fieldKey>`).
+
+```java
+// write: externalise the value, carry only the reference on the event/row
+store.put("alice-1", "full_name", "Alice Liddell");
+var ref = ForgettablePayloadReference.of("alice-1", "full_name");   // urn:gdpr:fp:alice-1:full_name
+
+// read: resolve the reference back to its value (fail-closed if erased)
+resolver.resolve(ref);            // Optional<String>, empty once erased
+resolver.require(ref);            // throws PayloadNotAvailableException instead of faking a value
+
+// erase (Art. 17): an ACTUAL DELETE of the subject's external rows + an audit fact
+new ForgettablePayloadErasureHandler(store, auditSink, actorResolver, Customer.class).erase("alice-1");
+```
+
+Wire it like the other JDBC adapters (apply migration `db/migration/V3__gdpr_forgettable_payload.sql`):
+
+```java
+@Bean ForgettablePayloadStore piiStore(DataSource ds) { return new JdbcForgettablePayloadStore(ds); }
+@Bean ForgettablePayloadResolver piiResolver(ForgettablePayloadStore s) { return new ForgettablePayloadResolver(s); }
+@Bean ErasureHandler piiErasure(ForgettablePayloadStore s, AuditSink a, ActorResolver r) {
+    return new ForgettablePayloadErasureHandler(s, a, r, Customer.class);
+}
+```
+
+Erasure is a real `DELETE` of the value (or an anonymising overwrite to a placeholder). It is **anonymisation**: because the carrier never held the value, deleting the external row leaves nothing to re-associate. A dropped subject is tombstoned, so a later `put` for them is refused (no silent resurrection), exactly like the key store below.
+
+### The exception: crypto-shredding (ADR-0009)
+
+Encrypt the PII inside the event with a **per-subject key**; erasure is the **drop of that key**, after which the byte-immutable ciphertext is unreadable. Use this **only when an immutable event must legally carry the value inline** and externalising it is not acceptable (a signed/notarised event, an integrity requirement).
+
+It is the secondary path on purpose. Encryption with a separately-held key is, in law, **pseudonymisation**, not anonymisation: GDPR Recital 26 and **EDPB Guidelines 01/2025** treat data re-associable via held information (the key) as still personal data, and the erasure claim hinges on **total, irreversible destruction of every key copy** (live store, every backup, every replica), which is operationally fragile and legally contested. See **[ADR-0010](docs/adr/0010-forgettable-payload-primary-pattern.md)** for the full legal nuance, and **[ADR-0009](docs/adr/0009-append-only-erasure-crypto-shredding.md)** for the crypto-shredding mechanism (`SubjectKeyStore`, `AesGcmCryptoShredder`, `CryptoShreddingErasureHandler`, migration `V2`).
+
+### Both at once
+
+When a subject's data is split across both paths, register both handlers (the erasure orchestration runs every handler) or wrap them in a `CompositeSubjectErasureHandler`, which erases across both as one unit and sums the affected counts so neither path is forgotten.
+
 ## Annotations
 
 | Annotation | Target | What it does | Where it surfaces |
@@ -421,6 +464,7 @@ The full decision rationale lives under [`docs/adr/`](docs/adr/). Highlights:
 - [ADR-0006](docs/adr/0006-typed-class-on-spi.md): typed `Class<?>` on SPI `entityType()`, supersedes the v0.1.x String shape.
 - [ADR-0007](docs/adr/0007-subjectidfield-is-documentation-only.md): `@GdprErasable.subjectIdField` is doc surfaced in DPIA, not a runtime lookup driver.
 - [ADR-0008](docs/adr/0008-consent-and-portability-deferred.md) [proposed]: Article 7 consent and Article 20 portability deferred to a future minor.
+- [ADR-0010](docs/adr/0010-forgettable-payload-primary-pattern.md): forgettable payload (external PII store) is the **primary** personal-data erasure pattern; crypto-shredding ([ADR-0009](docs/adr/0009-append-only-erasure-crypto-shredding.md)) is the narrow exception (pseudonymisation vs anonymisation, Recital 26 / EDPB 01/2025).
 
 ## Living requirements (tracegate)
 
@@ -429,7 +473,7 @@ treated as a requirement, and the catalog is generated from the test suite, neve
 hand. Each test-bearing module carries its own `_generated/` catalog (`requirements.md`,
 `requirements-by-us.md`, `requirements.json`, plus as-built sections like `http-endpoints.md`,
 `modules.md` and `config.md` where a framework is detected). The catalog covers
-**80 requirements** across the four test-bearing modules (`spring-gdpr-starter`,
+**107 requirements** across the four test-bearing modules (`spring-gdpr-starter`,
 `spring-gdpr-processor`, `spring-gdpr-starter-test`, `examples/quickstart-postgres`).
 
 The catalog is **generated, never hand-edited**. To change a requirement, change the test

@@ -14,7 +14,7 @@ Auto-generated. Modulith convention: each top-level package under `it.housetrees
 | `access` | 5 | 1 | _(none)_ | `jdbc` |
 | `audit` | 9 | 1 | _(none)_ | _(none)_ |
 | `autoconfig` | 1 | 1 | _(none)_ | `access`, `audit`, `erasure`, `retention`, `web` |
-| `erasure` | 11 | 2 | _(none)_ | `audit`, `jdbc` |
+| `erasure` | 18 | 3 | _(none)_ | `audit`, `jdbc` |
 | `jdbc` | 1 | 1 | _(none)_ | _(none)_ |
 | `logging` | 2 | 1 | _(none)_ | _(none)_ |
 | `retention` | 3 | 1 | _(none)_ | `jdbc` |
@@ -91,10 +91,11 @@ component "web"
 
 ### `erasure`
 
-- **Files**: 11
-- **Sub-packages** (2):
+- **Files**: 18
+- **Sub-packages** (3):
   - `erasure`
   - `erasure.crypto`
+  - `erasure.forgettable`
 - **Exposed API**: _(only the top-level package; no inner exports)_
 - **Depends on**:
   - `audit`

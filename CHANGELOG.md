@@ -10,7 +10,23 @@ by area: **Annotations**, **Runtime**, **Build-time**, **DX**, **Migrations**,
 
 ## [Unreleased]
 
-_No changes yet._
+### Added
+- **Annotations:** `@GdprPersonalData.storage` axis (`INLINE` default, `FORGETTABLE_PAYLOAD`),
+  declaring a field's value as externalised. Backward-compatible (default `INLINE`).
+- **Runtime:** the **forgettable-payload** erasure mechanism, now the **primary** personal-data
+  erasure pattern (ADR-0010): `ForgettablePayloadStore` SPI + `JdbcForgettablePayloadStore` /
+  `InMemoryForgettablePayloadStore`, `ForgettablePayloadReference` (URN-addressable),
+  `ForgettablePayloadResolver` (fail-closed, `require` throws instead of faking a value),
+  `ForgettablePayloadErasureHandler` (actual `DELETE` + audit fact, tombstone/no-resurrection), and
+  `CompositeSubjectErasureHandler` to erase across both the forgettable store and the crypto key
+  store as one unit.
+- **Migrations:** `V3__gdpr_forgettable_payload.sql` (`gdpr_forgettable_payload` external PII store).
+
+### Changed
+- **Docs:** crypto-shredding (ADR-0009) repositioned as the **secondary / exception** mechanism.
+  README headline erasure pattern is now forgettable-payload; the legal nuance (pseudonymisation vs
+  anonymisation, GDPR Recital 26, EDPB Guidelines 01/2025, contested total-key-destruction premise)
+  is recorded honestly in ADR-0010. Requirements catalog now covers 107 requirements.
 
 ## [2.0.0] - 2026-05-02
 

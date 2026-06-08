@@ -14,7 +14,8 @@ The point is honesty: a future contributor (or future me) can re-evaluate a deci
 - [ADR-0006](0006-typed-class-on-spi.md): `ErasureHandler.entityType()` returns `Class<?>`.
 - [ADR-0007](0007-subjectidfield-is-documentation-only.md): `@GdprErasable.subjectIdField` is documentation, not a runtime lookup driver.
 - [ADR-0008](0008-consent-and-portability-deferred.md) [proposed]: Article 7 consent management and Article 20 portability deferred to a future minor.
-- [ADR-0009](0009-append-only-erasure-crypto-shredding.md) [proposed]: Append-only-safe erasure via crypto-shredding (per-subject key, erasure = key drop). One-way door; RED tests committed `@Disabled` pending human GREEN approval.
+- [ADR-0009](0009-append-only-erasure-crypto-shredding.md): Append-only-safe erasure via crypto-shredding (per-subject key, erasure = key drop). Now the **secondary / exception** mechanism per ADR-0010, kept for the case where an immutable event must legally carry the value inline.
+- [ADR-0010](0010-forgettable-payload-primary-pattern.md): **Forgettable payload (external PII store) is the PRIMARY personal-data erasure pattern**; crypto-shredding is the exception. Encryption-with-a-held-key is pseudonymisation (Recital 26, EDPB 01/2025); the external-store `DELETE` is actual deletion.
 
 ## How to add an ADR
 

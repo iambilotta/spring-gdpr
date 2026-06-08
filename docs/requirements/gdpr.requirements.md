@@ -35,8 +35,11 @@ same catalog, not hidden.
 
 **As-is snapshot (2026-06-08, verified against the clone)**: the build-time generators, the
 runtime audit advisor + async sink, the erasure orchestration shell, and the retention
-scheduler are all implemented and tested. **Append-only-safe erasure** (crypto-shredding for
-event-sourced stores, REQ-GDPR-016/017, ADR-0009) is now implemented (`erasure/crypto/`). The
+scheduler are all implemented and tested. **Append-only-safe erasure** is implemented with two
+mechanisms: the **forgettable-payload external store** (the PRIMARY personal-data path, actual
+deletion, REQ-GDPR-022, ADR-0010, `erasure/forgettable/`) and **crypto-shredding** (the exception,
+for an immutable event that must legally carry the value inline, REQ-GDPR-016/017, ADR-0009,
+`erasure/crypto/`). The
 two remaining to-be gaps the library itself flags are the
 **IDENTITY/CONTACT/FINANCIAL category taxonomy** (today `@GdprPersonalData` carries only a
 `specialCategory` boolean) and **structured-log PII redaction**. Consent (Art.7) and
@@ -265,6 +268,30 @@ ADR between (a) **crypto-shredding** (per-subject encrypted PII, erasure = drop 
 (b) **sentinel-at-projection + upcaster** that strips the raw payload. ADR-0009 adopts (a):
 crypto-shredding, the first event-sourcing module the library ships.
 
+### REQ-GDPR-022 | Forgettable-payload external store is the primary personal-data erasure path (Art.17)
+- categoria: funzionale
+- priorità: M
+- fonte: GDPR Art.17 + Recital 26; EDPB Guidelines 01/2025 (pseudonymisation); ADR-0010
+- rationale: crypto-shredding (REQ-GDPR-016, ADR-0009) is pseudonymisation while any key copy survives, and its erasure-validity hinges on contested total key destruction. Keeping the PII out of the immutable carrier and DELETE-ing it from an external store is actual deletion (anonymisation), the more defensible default. Crypto-shredding becomes the exception (immutable event that must legally carry the value inline)
+- trace-to: `implementato` — ADR-0010; classes under `erasure/forgettable/` (`ForgettablePayloadStore` SPI + `JdbcForgettablePayloadStore`/`InMemoryForgettablePayloadStore`, `ForgettablePayloadReference`, `ForgettablePayloadResolver`, `ForgettablePayloadErasureHandler`) + `erasure/CompositeSubjectErasureHandler`; `@GdprPersonalData.storage` axis; migration `V3__gdpr_forgettable_payload.sql`; `JdbcForgettablePayloadStoreTest`, `InMemoryForgettablePayloadStoreTest`, `ForgettablePayloadReferenceTest`, `ForgettablePayloadResolverTest`, `ForgettablePayloadErasureHandlerTest`, `CompositeSubjectErasureHandlerTest`, `GdprPersonalDataStorageTest`
+- depends-on: REQ-GDPR-016
+- stato: implementato
+
+WHEN a subject exercises erasure against a field marked `storage = FORGETTABLE_PAYLOAD`, the system
+SHALL render the personal data **no longer present** by deleting it from the external store (actual
+deletion, not key destruction), while the immutable carrier keeps only a dangling reference that
+resolves to empty, and the erasure is recorded as an audit fact. Crypto-shredding (REQ-GDPR-016) is
+the secondary mechanism, used only where an immutable event must legally carry the value inline.
+
+```gherkin
+Given a personal-data field externalised to the forgettable-payload store
+When erasure is executed for that subject
+Then resolving the reference yields nothing (the value is actually deleted)
+And the carrier (row or immutable event) is unchanged, holding only the reference
+And a later write for that subject is refused (tombstone, no resurrection)
+And the audit trail still proves the erasure happened (who, when, why)
+```
+
 ### REQ-GDPR-018 | Structured-log PII redaction (Art.5(1)(f))
 - categoria: qos-constraint
 - priorità: S
@@ -325,3 +352,4 @@ not ready in this repo.
 ## Changelog
 - 2026-06-08 | REQ-GDPR-001..021 | created | first hand-authored EARS to-be spec of the library itself; 14 implementato (each with a hand-verified trace to an existing test/class), 7 proposto (category taxonomy, append-only erasure + its strategy ADR, log-redaction, Art.15 export, plus the ADR-0008 deferred consent/portability); strategy for append-only erasure deferred to a future ADR (REQ-GDPR-017)
 - 2026-06-08 | REQ-GDPR-016, REQ-GDPR-017 | proposto -> implementato | crypto-shredding shipped under ADR-0009 (accepted): per-subject AES-256-GCM key store (`SubjectKeyStore` SPI + JDBC default, `gdpr_subject_key`/V2), `AesGcmCryptoShredder`, `CryptoShreddingErasureHandler` (drop-the-key + audit fact); `CryptoShreddingErasureTest` un-`@Disabled` (4 GREEN) plus `AesGcmCryptoShredderTest`/`JdbcSubjectKeyStoreTest`
+- 2026-06-08 | REQ-GDPR-022 | created -> implementato | forgettable-payload external store made the PRIMARY personal-data erasure path (ADR-0010), crypto-shredding repositioned as the exception (pseudonymisation vs anonymisation, Recital 26 / EDPB 01/2025): `ForgettablePayloadStore` SPI + `JdbcForgettablePayloadStore` (`gdpr_forgettable_payload`/V3) + `InMemoryForgettablePayloadStore`, `ForgettablePayloadReference`, `ForgettablePayloadResolver` (fail-closed), `ForgettablePayloadErasureHandler` (DELETE + audit fact), `CompositeSubjectErasureHandler` (erase across both), `@GdprPersonalData.storage` axis; 27 new GREEN tests across 7 classes

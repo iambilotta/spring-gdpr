@@ -1,8 +1,15 @@
 # ADR-0009: Append-only-safe erasure via crypto-shredding
 
-- **Status:** accepted
+- **Status:** accepted (repositioned by ADR-0010 as the **secondary / exception** mechanism)
 - **Date:** 2026-06-08
 - **Deciders:** Francesco Bilotta
+
+> **Repositioned by [ADR-0010](0010-forgettable-payload-primary-pattern.md).** Crypto-shredding
+> remains correct and shipped, but it is the **exception**, not the default: encryption with a
+> separately-held key is *pseudonymisation* (Recital 26, EDPB 01/2025), and its erasure-validity
+> hinges on total key destruction, which is contested. The **primary** personal-data erasure pattern
+> is now the forgettable-payload external store (actual deletion). Use crypto-shredding only where an
+> immutable event must legally carry the value inline.
 
 ## Context
 

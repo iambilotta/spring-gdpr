@@ -6,9 +6,9 @@ Auto-generated from test sources by tracegate. Do NOT edit by hand: edit the tes
 
 ## Coverage
 
-- Total tests scanned: **70**
-- With complete spec javadoc: **35** (50%)
-- FR: 70
+- Total tests scanned: **97**
+- With complete spec javadoc: **62** (64%)
+- FR: 97
 
 ## Module `access`
 
@@ -398,6 +398,254 @@ Auto-generated from test sources by tracegate. Do NOT edit by hand: edit the tes
 - **ADR**: ADR-0009
 - **User Story**: REQ-GDPR-016
 - **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/crypto/JdbcSubjectKeyStoreTest.java`
+
+
+## Module `erasure.forgettable`
+
+### Functional Requirements
+
+#### `FR-erasure.forgettable.CompositeSubjectErasureHandler#erasesBothTheForgettablePayloadAndTheCryptoKey`
+
+- **Given**: a subject whose PII lives in BOTH the forgettable-payload store and (for an immutable event) a crypto-shredded field
+- **When**: the composite erasure handler runs once for that subject
+- **Then**: the external value is deleted AND the crypto key is dropped (both paths erased)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/CompositeSubjectErasureHandlerTest.java`
+
+#### `FR-erasure.forgettable.CompositeSubjectErasureHandler#rejectsAnEmptyDelegateList`
+
+- **Given**: a composite with no delegates
+- **When**: it is constructed
+- **Then**: construction is rejected (a composite that erases nothing is a silent compliance hole)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/CompositeSubjectErasureHandlerTest.java`
+
+#### `FR-erasure.forgettable.CompositeSubjectErasureHandler#sumsAffectedCountsAcrossDelegates`
+
+- **Given**: two delegate handlers each affecting one row/key
+- **When**: the composite erases a subject
+- **Then**: it sums the affected counts and reports the DELETE strategy
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/CompositeSubjectErasureHandlerTest.java`
+
+#### `FR-erasure.forgettable.ForgettablePayloadErasureHandler#erasedSubjectStaysErased`
+
+- **Given**: a subject erased via the handler
+- **When**: a put is attempted again for that subject
+- **Then**: the store refuses it (no silent resurrection through the erasure path)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/ForgettablePayloadErasureHandlerTest.java`
+
+#### `FR-erasure.forgettable.ForgettablePayloadErasureHandler#erasureDeletesThePiiWhileTheCarrierKeepsOnlyADanglingReference`
+
+- **Given**: a carrier that holds only a reference to an externalised PII field
+- **When**: the value is resolved before erasure, then the subject is erased
+- **Then**: the value is gone (resolve empty) while the carrier's reference is unchanged
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/ForgettablePayloadErasureHandlerTest.java`
+
+#### `FR-erasure.forgettable.ForgettablePayloadErasureHandler#recordsTheErasureAsAnAuditFact`
+
+- **Given**: an erasure of a subject
+- **When**: the handler runs
+- **Then**: an audit record (action ERASURE, basis Art.17, actor) is written: a recorded fact
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/ForgettablePayloadErasureHandlerTest.java`
+
+#### `FR-erasure.forgettable.ForgettablePayloadErasureHandler#rejectsBlankSubjectId`
+
+- **Given**: a blank subject id
+- **When**: the handler is asked to erase
+- **Then**: it is rejected (a blank id is never a real erasure target)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/ForgettablePayloadErasureHandlerTest.java`
+
+#### `FR-erasure.forgettable.ForgettablePayloadErasureHandler#reportsDeletedRowCountAndDeleteStrategy`
+
+- **Given**: a subject with two externalised fields
+- **When**: the erasure handler runs
+- **Then**: it reports the number of deleted value rows and uses the DELETE strategy
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/ForgettablePayloadErasureHandlerTest.java`
+
+#### `FR-erasure.forgettable.ForgettablePayloadReference#rejectsBlankCoordinates`
+
+- **Given**: a blank subject id or a blank field key
+- **When**: a reference is constructed
+- **Then**: construction is rejected (a reference must always point somewhere)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/ForgettablePayloadReferenceTest.java`
+
+#### `FR-erasure.forgettable.ForgettablePayloadReference#rejectsMalformedUrn`
+
+- **Given**: a malformed URN (wrong scheme or missing segments)
+- **When**: it is parsed back into a reference
+- **Then**: parsing is rejected rather than producing a half-built reference
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/ForgettablePayloadReferenceTest.java`
+
+#### `FR-erasure.forgettable.ForgettablePayloadReference#roundTripsThroughItsUrn`
+
+- **Given**: a subject id and a field key
+- **When**: a reference is built and rendered as a URN
+- **Then**: the URN is stable and round-trips back to the same reference
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/ForgettablePayloadReferenceTest.java`
+
+#### `FR-erasure.forgettable.ForgettablePayloadResolver#requireThrowsOnAMissingValue`
+
+- **Given**: a reference to a value that was never written
+- **When**: the value is required
+- **Then**: the resolver throws (a missing value is never silently treated as present)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/ForgettablePayloadResolverTest.java`
+
+#### `FR-erasure.forgettable.ForgettablePayloadResolver#requireThrowsOnAnErasedValueRatherThanFakingOne`
+
+- **Given**: a reference to a value that was erased
+- **When**: the value is required (not optional)
+- **Then**: the resolver throws a typed not-available error instead of a placeholder
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/ForgettablePayloadResolverTest.java`
+
+#### `FR-erasure.forgettable.ForgettablePayloadResolver#resolvesAReferenceToItsStoredValue`
+
+- **Given**: a stored value referenced by a ForgettablePayloadReference
+- **When**: the reference is resolved
+- **Then**: the resolver returns the value from the external store
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/ForgettablePayloadResolverTest.java`
+
+#### `FR-erasure.forgettable.ForgettablePayloadResolver#resolvesAnErasedReferenceToEmpty`
+
+- **Given**: a reference whose subject was erased
+- **When**: the reference is resolved
+- **Then**: the resolver returns empty (the dangling reference exposes no PII)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/ForgettablePayloadResolverTest.java`
+
+#### `FR-erasure.forgettable.GdprPersonalDataStorage#carriesTheForgettablePayloadStorageWhenDeclared`
+
+- **Given**: a field marked storage = FORGETTABLE_PAYLOAD
+- **When**: the annotation's storage axis is read
+- **Then**: it reports FORGETTABLE_PAYLOAD (the field routes to the external store + primary erasure)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/GdprPersonalDataStorageTest.java`
+
+#### `FR-erasure.forgettable.GdprPersonalDataStorage#defaultsToInlineForBackwardCompatibility`
+
+- **Given**: a personal-data field with no storage declared
+- **When**: the annotation's storage axis is read
+- **Then**: it defaults to INLINE (every pre-existing annotation stays valid)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/GdprPersonalDataStorageTest.java`
+
+#### `FR-erasure.forgettable.InMemoryForgettablePayloadStore#eraseDeletesAndTombstones`
+
+- **Given**: a subject with externalised values
+- **When**: the subject is erased then a put is attempted again
+- **Then**: values resolve empty and the put is refused (tombstone, no resurrection)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/InMemoryForgettablePayloadStoreTest.java`
+
+#### `FR-erasure.forgettable.InMemoryForgettablePayloadStore#putsResolvesAndMissesEmpty`
+
+- **Given**: an in-memory payload store
+- **When**: a value is put and resolved
+- **Then**: resolve returns it; a missing field resolves empty (fail-closed)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/InMemoryForgettablePayloadStoreTest.java`
+
+#### `FR-erasure.forgettable.JdbcForgettablePayloadStore#eraseDeletesEveryFieldForTheSubject`
+
+- **Given**: a subject with two externalised fields
+- **When**: the subject is erased
+- **Then**: every field for that subject resolves to empty (actual deletion of the PII)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStoreTest.java`
+
+#### `FR-erasure.forgettable.JdbcForgettablePayloadStore#eraseIsPerSubject`
+
+- **Given**: two subjects with externalised values
+- **When**: one is erased
+- **Then**: the other's values are untouched (per-subject erasure granularity)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStoreTest.java`
+
+#### `FR-erasure.forgettable.JdbcForgettablePayloadStore#eraseOfNeverSeenSubjectStillTombstones`
+
+- **Given**: a subject that never had any payload
+- **When**: erase is called for it (idempotent erasure)
+- **Then**: a tombstone is recorded so the subject can never be populated afterwards
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStoreTest.java`
+
+#### `FR-erasure.forgettable.JdbcForgettablePayloadStore#erasedSubjectCannotHaveAPayloadReWritten`
+
+- **Given**: a subject that was erased (its rows deleted, a tombstone recorded)
+- **When**: a new value is put for that same subject
+- **Then**: the put is refused (the tombstone forbids silently re-creating an erased subject)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStoreTest.java`
+
+#### `FR-erasure.forgettable.JdbcForgettablePayloadStore#putIsAnUpsert`
+
+- **Given**: an existing value for (subject, field)
+- **When**: a new value is put for the same coordinates (the store is mutable)
+- **Then**: resolve returns the latest value (last-writer-wins upsert)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStoreTest.java`
+
+#### `FR-erasure.forgettable.JdbcForgettablePayloadStore#putsAndResolvesAValue`
+
+- **Given**: a JDBC payload store on a fresh schema
+- **When**: a value is put for (subject, field) and resolved back
+- **Then**: resolve returns the stored value (the externalised PII lives only here)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStoreTest.java`
+
+#### `FR-erasure.forgettable.JdbcForgettablePayloadStore#rejectsTableNamesThatLookLikeSqlInjection`
+
+- **Given**: a hostile table name that is not a bare SQL identifier
+- **When**: the store is constructed with it
+- **Then**: construction fails fast before any SQL is built (injection-safe)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStoreTest.java`
+
+#### `FR-erasure.forgettable.JdbcForgettablePayloadStore#resolveOfMissingFieldIsEmpty`
+
+- **Given**: a subject without a value for a given field
+- **When**: that field is resolved
+- **Then**: resolve returns empty (fail-closed: a missing value is never a partial/placeholder)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStoreTest.java`
 
 
 ## Module `logging`

@@ -4,8 +4,8 @@ Auto-generated companion to `requirements.md`. Tests link to a User Story via th
 
 ## Coverage
 
-- Total tests scanned: **70**
-- Tests linked to a User Story: **35**
+- Total tests scanned: **97**
+- Tests linked to a User Story: **62**
 - Tests without `@spec.us` (implementation detail): **35**
 - User Stories declared in PRODUCT.md: **0**
 - User Stories with at least one linked test: **0**
@@ -63,6 +63,63 @@ Auto-generated companion to `requirements.md`. Tests link to a User Story via th
   - **Then**: an empty export is returned for that subject id (not null, not an error)
 - `FR-autoconfig.GdprAutoConfiguration#wiresTheAccessExportService`
   - **Then**: an AccessExportService bean is wired (Art. 15 export, REQ-GDPR-019), even with no SubjectDataProvider registered (it just exports nothing)
+
+## `REQ-GDPR-022`  _(unknown to PRODUCT.md)_
+
+- `FR-erasure.forgettable.CompositeSubjectErasureHandler#erasesBothTheForgettablePayloadAndTheCryptoKey`
+  - **Then**: the external value is deleted AND the crypto key is dropped (both paths erased)
+- `FR-erasure.forgettable.CompositeSubjectErasureHandler#rejectsAnEmptyDelegateList`
+  - **Then**: construction is rejected (a composite that erases nothing is a silent compliance hole)
+- `FR-erasure.forgettable.CompositeSubjectErasureHandler#sumsAffectedCountsAcrossDelegates`
+  - **Then**: it sums the affected counts and reports the DELETE strategy
+- `FR-erasure.forgettable.ForgettablePayloadErasureHandler#erasedSubjectStaysErased`
+  - **Then**: the store refuses it (no silent resurrection through the erasure path)
+- `FR-erasure.forgettable.ForgettablePayloadErasureHandler#erasureDeletesThePiiWhileTheCarrierKeepsOnlyADanglingReference`
+  - **Then**: the value is gone (resolve empty) while the carrier's reference is unchanged
+- `FR-erasure.forgettable.ForgettablePayloadErasureHandler#recordsTheErasureAsAnAuditFact`
+  - **Then**: an audit record (action ERASURE, basis Art.17, actor) is written: a recorded fact
+- `FR-erasure.forgettable.ForgettablePayloadErasureHandler#rejectsBlankSubjectId`
+  - **Then**: it is rejected (a blank id is never a real erasure target)
+- `FR-erasure.forgettable.ForgettablePayloadErasureHandler#reportsDeletedRowCountAndDeleteStrategy`
+  - **Then**: it reports the number of deleted value rows and uses the DELETE strategy
+- `FR-erasure.forgettable.ForgettablePayloadReference#rejectsBlankCoordinates`
+  - **Then**: construction is rejected (a reference must always point somewhere)
+- `FR-erasure.forgettable.ForgettablePayloadReference#rejectsMalformedUrn`
+  - **Then**: parsing is rejected rather than producing a half-built reference
+- `FR-erasure.forgettable.ForgettablePayloadReference#roundTripsThroughItsUrn`
+  - **Then**: the URN is stable and round-trips back to the same reference
+- `FR-erasure.forgettable.ForgettablePayloadResolver#requireThrowsOnAMissingValue`
+  - **Then**: the resolver throws (a missing value is never silently treated as present)
+- `FR-erasure.forgettable.ForgettablePayloadResolver#requireThrowsOnAnErasedValueRatherThanFakingOne`
+  - **Then**: the resolver throws a typed not-available error instead of a placeholder
+- `FR-erasure.forgettable.ForgettablePayloadResolver#resolvesAReferenceToItsStoredValue`
+  - **Then**: the resolver returns the value from the external store
+- `FR-erasure.forgettable.ForgettablePayloadResolver#resolvesAnErasedReferenceToEmpty`
+  - **Then**: the resolver returns empty (the dangling reference exposes no PII)
+- `FR-erasure.forgettable.GdprPersonalDataStorage#carriesTheForgettablePayloadStorageWhenDeclared`
+  - **Then**: it reports FORGETTABLE_PAYLOAD (the field routes to the external store + primary erasure)
+- `FR-erasure.forgettable.GdprPersonalDataStorage#defaultsToInlineForBackwardCompatibility`
+  - **Then**: it defaults to INLINE (every pre-existing annotation stays valid)
+- `FR-erasure.forgettable.InMemoryForgettablePayloadStore#eraseDeletesAndTombstones`
+  - **Then**: values resolve empty and the put is refused (tombstone, no resurrection)
+- `FR-erasure.forgettable.InMemoryForgettablePayloadStore#putsResolvesAndMissesEmpty`
+  - **Then**: resolve returns it; a missing field resolves empty (fail-closed)
+- `FR-erasure.forgettable.JdbcForgettablePayloadStore#eraseDeletesEveryFieldForTheSubject`
+  - **Then**: every field for that subject resolves to empty (actual deletion of the PII)
+- `FR-erasure.forgettable.JdbcForgettablePayloadStore#eraseIsPerSubject`
+  - **Then**: the other's values are untouched (per-subject erasure granularity)
+- `FR-erasure.forgettable.JdbcForgettablePayloadStore#eraseOfNeverSeenSubjectStillTombstones`
+  - **Then**: a tombstone is recorded so the subject can never be populated afterwards
+- `FR-erasure.forgettable.JdbcForgettablePayloadStore#erasedSubjectCannotHaveAPayloadReWritten`
+  - **Then**: the put is refused (the tombstone forbids silently re-creating an erased subject)
+- `FR-erasure.forgettable.JdbcForgettablePayloadStore#putIsAnUpsert`
+  - **Then**: resolve returns the latest value (last-writer-wins upsert)
+- `FR-erasure.forgettable.JdbcForgettablePayloadStore#putsAndResolvesAValue`
+  - **Then**: resolve returns the stored value (the externalised PII lives only here)
+- `FR-erasure.forgettable.JdbcForgettablePayloadStore#rejectsTableNamesThatLookLikeSqlInjection`
+  - **Then**: construction fails fast before any SQL is built (injection-safe)
+- `FR-erasure.forgettable.JdbcForgettablePayloadStore#resolveOfMissingFieldIsEmpty`
+  - **Then**: resolve returns empty (fail-closed: a missing value is never a partial/placeholder)
 
 ## `US-DX-001-honest-erasure-error-contract`  _(unknown to PRODUCT.md)_
 
