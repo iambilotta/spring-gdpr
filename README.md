@@ -221,7 +221,35 @@ public class CustomerErasureHandler implements ErasureHandler {
 }
 ```
 
-The example in [`examples/quickstart-postgres`](examples/quickstart-postgres) wires three handlers across `Customer`, `Order`, `MarketingPreference`.
+The example in [`examples/quickstart-postgres`](examples/quickstart-postgres) wires a `Customer` handler end to end (REST -> handler -> delete -> audited report).
+
+### Ready-made JDBC adapters (skip the boilerplate)
+
+The three SPIs (`ErasureHandler`, `RetentionTarget`, `SubjectDataProvider`) are the escape hatch for any store. For the common "one table, one subject-id column" case you do not hand-write the SQL: register the JDBC base class with a couple of constructor args.
+
+```java
+@Bean
+ErasureHandler customerErasure(DataSource ds) {
+    // DELETE FROM customers WHERE subject_id = ?   (subject id always bound, never interpolated)
+    return new JdbcErasureHandler(ds, Customer.class, "customers", "subject_id", Strategy.DELETE);
+}
+
+@Bean
+RetentionTarget customerRetention(DataSource ds) {
+    // ANONYMIZE: NULL the listed personal-data columns on rows older than the cutoff
+    return new JdbcRetentionTarget(ds, Customer.class, "customers", "created_at",
+            Duration.ofDays(365 * 5), Strategy.ANONYMIZE, "full_name", "email");
+}
+
+@Bean
+SubjectDataProvider customerExport(DataSource ds) {
+    // SELECT * FROM customers WHERE id = ?  -> map each row to a @GdprPersonalData-annotated object
+    return new JdbcSubjectDataProvider(ds, "customers", "id",
+            (rs, n) -> new Customer(rs.getString("full_name"), rs.getString("email")));
+}
+```
+
+Table and column names are validated as bare SQL identifiers at construction (they cannot be JDBC-bound), so a typo or a hostile value fails fast and never reaches the database; the subject id and the cutoff are always `?`-bound. When the case is anything richer (FK cascade in a transaction, pseudonymise with a deterministic token, a non-JDBC store), implement the raw SPI interface directly.
 
 ## Annotations
 
