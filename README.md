@@ -205,7 +205,7 @@ Upfront, because this is the first question every evaluator asks.
 2. invokes each handler on the subject id,
 3. audits each handler call (subject id, target type, strategy, outcome).
 
-You write the `ErasureHandler.erase(subjectId)` for each table that holds personal data. The library handles ordering, audit and HTTP shape, and returns `207 Multi-Status` if a handler partially failed. See [ADR-0004](docs/adr/0004-erasure-handler-orchestration.md) for the why.
+You write the `ErasureHandler.erase(subjectId)` for each table that holds personal data. The library handles ordering and audit and returns the per-handler aggregate as `200 OK`. The orchestration is fail-fast, not partial-status: if a handler throws, the call stops at that handler and the exception propagates (handlers already run are committed, later handlers do not run). There is no `207 Multi-Status`: wrap the handlers you need to be atomic in a single transactional handler, and declare FK-safe ordering via `@GdprErasable.order` so a wrong order surfaces as a database constraint violation at the first call. See [ADR-0004](docs/adr/0004-erasure-handler-orchestration.md) for the why and the [Reality check](#reality-check) for the failure contract.
 
 For the routine case (single table, hard delete) the handler is one method:
 
@@ -345,7 +345,8 @@ What this library does NOT do, in one place. Read this before adopting in produc
 |---|---|---|
 | Throughput | Default async queue 1024, 1 worker. Sustained ~10k+/sec/pod saturates and drops | Bump `queue-capacity` and `thread-count`, or ship audit to SLF4J + log aggregator |
 | Engine portability | Bundled migration uses `BOOLEAN` and `CREATE INDEX IF NOT EXISTS`. Oracle and DB2 reject both | Adapt the SQL for those engines |
-| Default-open REST | `/gdpr/erasure` and `/gdpr/audit/access` ship without auth | You MUST wire Spring Security; see above |
+| Default-open REST | `/gdpr/erasure`, `/gdpr/audit/access` and `/gdpr/access/export` ship without auth | You MUST wire Spring Security; see above. A startup WARN fires when the surface is mounted (see [Wiring with Spring Security](#wiring-with-spring-security)) |
+| Erasure failure contract | A throwing `ErasureHandler` is **fail-fast**, not `207 Multi-Status`: the exception propagates as a raw `500`, handlers already run stay committed, later handlers do not run. A blank/unknown subject id is `400` | Make a multi-table erasure atomic inside one transactional handler. Declare FK-safe `order()`. There is no per-handler partial-status response |
 | Async-by-default | Audit gaps under saturation are real, not hypothetical | Observable via `dropped` counter + WARN logs. Set `async.enabled=false` for zero-loss audit, accept request-thread blocking |
 | `subjectIdField` is documentation | The annotated field is shown in DPIA; it does NOT drive the lookup | Default `SubjectIdResolver` looks for a parameter literally named `subjectId` (case-insensitive). Override the bean for custom resolution. See [ADR-0007](docs/adr/0007-subjectidfield-is-documentation-only.md) |
 | Multi-pod retention | `@Scheduled` fires on every pod; three pods triple-call `applyDue` | Configure leader election (ShedLock recipe in a future minor) |

@@ -18,7 +18,7 @@ Erasure is performed by user-provided `ErasureHandler` beans, one per type. The 
 2. invokes each on the requested `subjectId`,
 3. emits an audit row per handler (entity type, subject id, strategy, affected count, outcome).
 
-The `DELETE /gdpr/erasure/{subjectId}` REST endpoint returns the per-handler aggregate as `{"subjectId": ..., "affectedByType": {"com.example.Customer": 1, ...}}`. If a handler partially fails the response surfaces it as a 207 Multi-Status with the per-handler outcome list.
+The `DELETE /gdpr/erasure/{subjectId}` REST endpoint returns the per-handler aggregate as `200 OK` with `{"subjectId": ..., "affectedByType": {"com.example.Customer": 1, ...}}`. Orchestration is fail-fast, not partial-status: if a handler throws, the call stops there and the exception propagates (handlers already run are committed; later handlers do not run). A blank/unknown subject id is rejected as `400`. A per-handler `207 Multi-Status` outcome list was considered and rejected: it would force the library to define a "partial erasure succeeded" success shape, which for a compliance tool is a worse contract than failing loud. An erasure that must be atomic across tables belongs in a single transactional handler.
 
 `@GdprErasable.subjectIdField` is documentation surfaced in the DPIA, not a runtime lookup driver: see ADR-0007.
 

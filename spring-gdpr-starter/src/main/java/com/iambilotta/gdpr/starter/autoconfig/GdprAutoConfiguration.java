@@ -35,6 +35,7 @@ import com.iambilotta.gdpr.starter.erasure.ErasureService;
 import com.iambilotta.gdpr.starter.retention.RetentionScheduler;
 import com.iambilotta.gdpr.starter.retention.RetentionTarget;
 import com.iambilotta.gdpr.starter.web.GdprController;
+import com.iambilotta.gdpr.starter.web.GdprExceptionHandler;
 
 @AutoConfiguration(after = DataSourceAutoConfiguration.class)
 @ConditionalOnProperty(prefix = "spring.gdpr", name = "enabled", havingValue = "true", matchIfMissing = true)
@@ -173,8 +174,17 @@ public class GdprAutoConfiguration {
 
         @Bean
         @ConditionalOnMissingBean
-        public GdprController gdprController(ErasureService erasureService, AuditSink auditSink) {
-            return new GdprController(erasureService, auditSink);
+        public GdprController gdprController(
+                ErasureService erasureService,
+                AccessExportService accessExportService,
+                AuditSink auditSink) {
+            return new GdprController(erasureService, accessExportService, auditSink);
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        public GdprExceptionHandler gdprExceptionHandler() {
+            return new GdprExceptionHandler();
         }
     }
 }
