@@ -183,13 +183,20 @@ Distributed via [JitPack](https://jitpack.io/#iambilotta/spring-gdpr). **Maven C
 </plugin>
 ```
 
-**4. Apply the audit-table migration via Flyway:**
+**4. Add the schema to your own migration sequence.**
 
-```
-classpath:db/migration/V1__gdpr_audit_access.sql
-```
+The published jar **deliberately does not ship runnable migrations**: a library must not own your
+Flyway version sequence (shipping `db/migration/V1..V3` would squat versions 1-3 on the default
+`classpath:db/migration` location and break the build of any adopter that already has a `V1`). Copy
+the reference DDL into your own migration sequence, with your own version numbers:
 
-(or the bundled Liquibase changelog at `db/changelog/spring-gdpr-changelog.xml`)
+- audit log: [`spring-gdpr-starter/src/main/resources/db/migration/V1__gdpr_audit_access.sql`](spring-gdpr-starter/src/main/resources/db/migration/V1__gdpr_audit_access.sql)
+- forgettable-payload store (primary erasure path): [`V3__gdpr_forgettable_payload.sql`](spring-gdpr-starter/src/main/resources/db/migration/V3__gdpr_forgettable_payload.sql)
+- subject-key store (only if you use crypto-shredding): [`V2__gdpr_subject_key.sql`](spring-gdpr-starter/src/main/resources/db/migration/V2__gdpr_subject_key.sql)
+
+The DDL files stay in the repo as the canonical reference (and on this module's own test classpath);
+they are just not handed to you on a path that collides with yours. The
+[`examples/quickstart-postgres`](examples/quickstart-postgres) does exactly this (its own `db/migration`).
 
 **5. Annotate one domain entity** (see the example above), `mvn compile`, open the two generated files under `target/generated-sources/annotations/spring/gdpr/`.
 
@@ -500,7 +507,7 @@ What this library does NOT do, in one place. Read this before adopting in produc
 | Area | What can hurt you | Mitigation |
 |---|---|---|
 | Throughput | Default async queue 1024, 1 worker. Sustained ~10k+/sec/pod saturates and drops | Bump `queue-capacity` and `thread-count`, or ship audit to SLF4J + log aggregator |
-| Engine portability | Bundled migration uses `BOOLEAN` and `CREATE INDEX IF NOT EXISTS`. Oracle and DB2 reject both | Adapt the SQL for those engines |
+| Engine portability | The reference DDL uses `BOOLEAN` and `CREATE INDEX IF NOT EXISTS`. Oracle and DB2 reject both | Adapt the SQL for those engines when you copy it into your migrations |
 | Default-open REST | `/gdpr/erasure`, `/gdpr/audit/access` and `/gdpr/access/export` ship without auth | You MUST wire Spring Security; see above. A startup WARN fires when the surface is mounted (see [Wiring with Spring Security](#wiring-with-spring-security)) |
 | Erasure failure contract | A throwing `ErasureHandler` is **fail-fast**, not `207 Multi-Status`: the exception propagates as a raw `500`, handlers already run stay committed, later handlers do not run. A blank/unknown subject id is `400` | Make a multi-table erasure atomic inside one transactional handler. Declare FK-safe `order()`. There is no per-handler partial-status response |
 | Async-by-default | Audit gaps under saturation are real, not hypothetical | Observable via `dropped` counter + WARN logs. Set `async.enabled=false` for zero-loss audit, accept request-thread blocking |

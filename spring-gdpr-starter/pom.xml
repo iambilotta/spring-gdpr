@@ -90,4 +90,29 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!--
+              Ship the schema as REFERENCE, never as runnable artifacts on the consumer's path.
+              The DDL under db/migration and the Liquibase changelog under db/changelog stay in the
+              repo (and in target/classes, so this module's own tests still load them), but they are
+              EXCLUDED from the published jar. A library must not own the consumer's Flyway version
+              sequence: shipping db/migration/V1..V3 squats versions 1-3 on every adopter that uses the
+              default classpath:db/migration location and breaks their build with a duplicate-version
+              error. Adopters copy the documented DDL into their own migration sequence (the
+              quickstart and the README show this). See ADR-0010 / the README "Apply the migration".
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>db/migration/**</exclude>
+                        <exclude>db/changelog/**</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
