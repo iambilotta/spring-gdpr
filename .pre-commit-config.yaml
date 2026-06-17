@@ -1,0 +1,39 @@
+# pre-commit framework config (https://pre-commit.com).
+#
+# Install once per clone:   make setup   (installs tracegate pinned + pre-commit hooks)
+# Run on demand:            pre-commit run --all-files
+#
+# This repo's _generated/ catalog is a WHOLE-TREE derived artifact (tracegate reads every
+# module's test suite). It must stay in lockstep with the code, and CI drift-gates it
+# (`tracegate . --check`, the `tracegate` job). The hooks below regenerate + auto-stage it
+# on every tree-mutating operation so the gate can never catch drift the local dev didn't see.
+#
+# The generator is the OSS tool tracegate, pinned by Makefile TRACEGATE_REF (kept in lockstep
+# with the CI job's env). `make setup` installs that exact pin onto PATH.
+repos:
+  - repo: local
+    hooks:
+      - id: regen-generated-docs
+        name: regenerate */_generated/*.md + auto-stage
+        # Idempotent: clean tree -> byte-identical output -> no-op. Running it on every commit
+        # is what makes the catalog unable to drift away from the code.
+        entry: scripts/hooks/regen-docs-and-stage.sh
+        language: script
+        always_run: true
+        pass_filenames: false
+
+      - id: regen-generated-docs-on-integration
+        name: regenerate */_generated/*.md + auto-stage (after merge/rebase/cherry-pick)
+        # ADR sw-scm-007: */_generated is a WHOLE-TREE derived artifact. The pre-commit hook
+        # above fires only on `git commit`; merge / pull / rebase-pick / cherry-pick REPLAY
+        # existing commits and bypass it, so integrating several branches yields an HEAD whose
+        # _generated was regenerated against the union by nobody. These two post-* stages run
+        # the SAME pinned-tracegate regen + auto-stage after every tree-mutating integration
+        # op, so the integrated HEAD is consistent without a manual `make requirements`.
+        # Idempotent: no change in the tree -> no-op. They run AFTER the operation, so they only
+        # stage the regen for the next commit, they never create a commit themselves.
+        entry: scripts/hooks/regen-docs-and-stage.sh
+        language: script
+        stages: [post-merge, post-rewrite]
+        always_run: true
+        pass_filenames: false
