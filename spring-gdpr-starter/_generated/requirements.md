@@ -6,9 +6,9 @@ Auto-generated from test sources by tracegate. Do NOT edit by hand: edit the tes
 
 ## Coverage
 
-- Total tests scanned: **101**
-- With complete spec javadoc: **66** (65%)
-- FR: 101
+- Total tests scanned: **107**
+- With complete spec javadoc: **72** (67%)
+- FR: 107
 
 ## Module `access`
 
@@ -194,6 +194,57 @@ Auto-generated from test sources by tracegate. Do NOT edit by hand: edit the tes
 ## Module `autoconfig`
 
 ### Functional Requirements
+
+#### `FR-autoconfig.DeclarativeErasureWiring#autoWiresACryptoShreddingHandlerForACryptoShredAnnotatedType`
+
+- **Given**: a type annotated @GdprErasable(strategy = CRYPTO_SHRED) and no hand-wired handler
+- **When**: the context starts with that type's package as the scanned base
+- **Then**: a CryptoShreddingErasureHandler for that type is auto-wired and visible to the ErasureService (issue #36, the declarative bridge to the ADR-0009 machinery)
+- **ADR**: ADR-0009
+- **User Story**: REQ-GDPR-024
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/DeclarativeErasureWiringTest.java`
+
+#### `FR-autoconfig.DeclarativeErasureWiring#autoWiresAForgettablePayloadHandlerForAForgettableAnnotatedTypeWithItsOrder`
+
+- **Given**: a type annotated @GdprErasable(strategy = FORGETTABLE, order = 30)
+- **When**: the context starts with that type's package as the scanned base
+- **Then**: a ForgettablePayloadErasureHandler is auto-wired with the declared order and is visible to the ErasureService (issue #36, the ADR-0010 primary path, declarative)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-024
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/DeclarativeErasureWiringTest.java`
+
+#### `FR-autoconfig.DeclarativeErasureWiring#contributesAnInMemoryForgettableStoreFallbackWhenNoDataSourceIsPresent`
+
+- **Given**: a FORGETTABLE type with no DataSource
+- **When**: the context starts
+- **Then**: an in-memory ForgettablePayloadStore is contributed as the dev/test fallback
+- **User Story**: REQ-GDPR-024
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/DeclarativeErasureWiringTest.java`
+
+#### `FR-autoconfig.DeclarativeErasureWiring#contributesAnInMemoryKeyStoreFallbackWhenNoDataSourceIsPresent`
+
+- **Given**: declaring CRYPTO_SHRED with no DataSource on the context
+- **When**: the context starts
+- **Then**: an in-memory SubjectKeyStore is contributed (dev/test fallback) and the wired handler runs end to end against it
+- **User Story**: REQ-GDPR-024
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/DeclarativeErasureWiringTest.java`
+
+#### `FR-autoconfig.DeclarativeErasureWiring#doesNotAutoWireAHandlerForTheLegacyDeleteStrategy`
+
+- **Given**: a type annotated with the legacy strategy DELETE (the adopter owns the handler)
+- **When**: the context starts with that type's package as the scanned base
+- **Then**: no library handler is auto-wired for it: DELETE/ANONYMIZE/PSEUDONYMIZE stay the adopter's ErasureHandler (ADR-0004), only the append-only-safe strategies are wired
+- **ADR**: ADR-0004
+- **User Story**: REQ-GDPR-024
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/DeclarativeErasureWiringTest.java`
+
+#### `FR-autoconfig.DeclarativeErasureWiring#theDefaultStoreBeansAreOverridable`
+
+- **Given**: an adopter that declares their own SubjectKeyStore bean
+- **When**: the context starts with a CRYPTO_SHRED type
+- **Then**: the adopter's store wins (the default is @ConditionalOnMissingBean, overridable)
+- **User Story**: REQ-GDPR-024
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/DeclarativeErasureWiringTest.java`
 
 #### `FR-autoconfig.GdprAutoConfiguration#defaultsToSlf4jSinkWhenJdbcDisabled`
 

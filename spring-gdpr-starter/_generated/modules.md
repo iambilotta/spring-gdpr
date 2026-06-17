@@ -13,7 +13,7 @@ Auto-generated. Modulith convention: each top-level package under `it.housetrees
 | `(root)` | 1 | 1 | _(none)_ | _(none)_ |
 | `access` | 5 | 1 | _(none)_ | `jdbc` |
 | `audit` | 9 | 1 | _(none)_ | _(none)_ |
-| `autoconfig` | 1 | 1 | _(none)_ | `access`, `audit`, `erasure`, `retention`, `web` |
+| `autoconfig` | 2 | 1 | _(none)_ | `access`, `audit`, `erasure`, `retention`, `web` |
 | `erasure` | 21 | 3 | _(none)_ | `audit`, `jdbc` |
 | `jdbc` | 1 | 1 | _(none)_ | _(none)_ |
 | `logging` | 2 | 1 | _(none)_ | _(none)_ |
@@ -78,7 +78,7 @@ component "web"
 
 ### `autoconfig`
 
-- **Files**: 1
+- **Files**: 2
 - **Sub-packages** (1):
   - `autoconfig`
 - **Exposed API**: _(only the top-level package; no inner exports)_

@@ -13,6 +13,18 @@ by area: **Annotations**, **Runtime**, **Build-time**, **DX**, **Migrations**,
 ### Added
 - **Annotations:** `@GdprPersonalData.storage` axis (`INLINE` default, `FORGETTABLE_PAYLOAD`),
   declaring a field's value as externalised. Backward-compatible (default `INLINE`).
+- **Annotations:** `@GdprErasable.Strategy` gains `FORGETTABLE` and `CRYPTO_SHRED`
+  ([#36](https://github.com/iambilotta/spring-gdpr/issues/36)). Declaring either auto-wires the
+  matching append-only-safe `ErasureHandler` (no hand config); `DELETE` / `ANONYMIZE` /
+  `PSEUDONYMIZE` are unchanged. Additive and backward-compatible.
+- **Runtime:** declarative append-only-safe erasure ([#36](https://github.com/iambilotta/spring-gdpr/issues/36)):
+  `GdprErasableScannerRegistrar` scans the application packages for `@GdprErasable(strategy =
+  FORGETTABLE | CRYPTO_SHRED)` types and registers a `ForgettablePayloadErasureHandler` /
+  `CryptoShreddingErasureHandler` per type, so `DELETE /gdpr/erasure/{subjectId}` routes them through
+  the existing machinery (ADR-0009 / ADR-0010) with zero `@Configuration`. The starter contributes the
+  default `SubjectKeyStore` / `ForgettablePayloadStore` / `ForgettablePayloadResolver` beans (JDBC when
+  a `DataSource` is present, in-memory dev/test fallback otherwise), each `@ConditionalOnMissingBean`
+  and overridable. The chosen strategy is named in the generated DPIA.
 - **Runtime:** the **forgettable-payload** erasure mechanism, now the **primary** personal-data
   erasure pattern (ADR-0010): `ForgettablePayloadStore` SPI + `JdbcForgettablePayloadStore` /
   `InMemoryForgettablePayloadStore`, `ForgettablePayloadReference` (URN-addressable),
