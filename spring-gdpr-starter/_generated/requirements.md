@@ -6,9 +6,9 @@ Auto-generated from test sources by tracegate. Do NOT edit by hand: edit the tes
 
 ## Coverage
 
-- Total tests scanned: **107**
-- With complete spec javadoc: **72** (67%)
-- FR: 107
+- Total tests scanned: **111**
+- With complete spec javadoc: **76** (68%)
+- FR: 111
 
 ## Module `access`
 
@@ -694,6 +694,15 @@ Auto-generated from test sources by tracegate. Do NOT edit by hand: edit the tes
 - **User Story**: REQ-GDPR-022
 - **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStoreTest.java`
 
+#### `FR-erasure.forgettable.JdbcForgettablePayloadStore#handlesLargeFreetextPayloadBeyondOldVarcharLimit`
+
+- **Given**: a free-text PII value longer than 4096 characters (the old VARCHAR cap)
+- **When**: that value is stored and resolved
+- **Then**: the full value round-trips without truncation (payload_value is TEXT, unbounded)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStoreTest.java`
+
 #### `FR-erasure.forgettable.JdbcForgettablePayloadStore#putIsAnUpsert`
 
 - **Given**: an existing value for (subject, field)
@@ -729,6 +738,33 @@ Auto-generated from test sources by tracegate. Do NOT edit by hand: edit the tes
 - **ADR**: ADR-0010
 - **User Story**: REQ-GDPR-022
 - **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStoreTest.java`
+
+#### `FR-erasure.forgettable.JdbcForgettablePayloadStorePostgres#erasureWritesTombstoneAndDeletesFieldsOnPostgres`
+
+- **Given**: a subject with fields stored on Postgres
+- **When**: the subject is erased
+- **Then**: the tombstone is written using the plain '__erased__' reserved key (no NUL byte) and every resolved field is empty afterwards
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStorePostgresIT.java`
+
+#### `FR-erasure.forgettable.JdbcForgettablePayloadStorePostgres#largeFreetextPayloadRoundTripsOnPostgres`
+
+- **Given**: the V3 Flyway migration applied to PostgreSQL (payload_value is TEXT, not VARCHAR)
+- **When**: a free-text value longer than 4096 characters is stored and resolved
+- **Then**: the full value round-trips without truncation on Postgres
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStorePostgresIT.java`
+
+#### `FR-erasure.forgettable.JdbcForgettablePayloadStorePostgres#putAndResolveAgainstMigratedPostgresSchema`
+
+- **Given**: the V3 Flyway migration applied to a real PostgreSQL 16 database
+- **When**: a value is put and resolved
+- **Then**: the store works against the migrated schema (migration is Postgres-compatible)
+- **ADR**: ADR-0010
+- **User Story**: REQ-GDPR-022
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/forgettable/JdbcForgettablePayloadStorePostgresIT.java`
 
 
 ## Module `logging`

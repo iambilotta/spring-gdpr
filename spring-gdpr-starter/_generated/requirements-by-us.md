@@ -4,8 +4,8 @@ Auto-generated companion to `requirements.md`. Tests link to a User Story via th
 
 ## Coverage
 
-- Total tests scanned: **107**
-- Tests linked to a User Story: **72**
+- Total tests scanned: **111**
+- Tests linked to a User Story: **76**
 - Tests without `@spec.us` (implementation detail): **35**
 - User Stories declared in PRODUCT.md: **0**
 - User Stories with at least one linked test: **0**
@@ -112,6 +112,8 @@ Auto-generated companion to `requirements.md`. Tests link to a User Story via th
   - **Then**: a tombstone is recorded so the subject can never be populated afterwards
 - `FR-erasure.forgettable.JdbcForgettablePayloadStore#erasedSubjectCannotHaveAPayloadReWritten`
   - **Then**: the put is refused (the tombstone forbids silently re-creating an erased subject)
+- `FR-erasure.forgettable.JdbcForgettablePayloadStore#handlesLargeFreetextPayloadBeyondOldVarcharLimit`
+  - **Then**: the full value round-trips without truncation (payload_value is TEXT, unbounded)
 - `FR-erasure.forgettable.JdbcForgettablePayloadStore#putIsAnUpsert`
   - **Then**: resolve returns the latest value (last-writer-wins upsert)
 - `FR-erasure.forgettable.JdbcForgettablePayloadStore#putsAndResolvesAValue`
@@ -120,6 +122,12 @@ Auto-generated companion to `requirements.md`. Tests link to a User Story via th
   - **Then**: construction fails fast before any SQL is built (injection-safe)
 - `FR-erasure.forgettable.JdbcForgettablePayloadStore#resolveOfMissingFieldIsEmpty`
   - **Then**: resolve returns empty (fail-closed: a missing value is never a partial/placeholder)
+- `FR-erasure.forgettable.JdbcForgettablePayloadStorePostgres#erasureWritesTombstoneAndDeletesFieldsOnPostgres`
+  - **Then**: the tombstone is written using the plain '__erased__' reserved key (no NUL byte) and every resolved field is empty afterwards
+- `FR-erasure.forgettable.JdbcForgettablePayloadStorePostgres#largeFreetextPayloadRoundTripsOnPostgres`
+  - **Then**: the full value round-trips without truncation on Postgres
+- `FR-erasure.forgettable.JdbcForgettablePayloadStorePostgres#putAndResolveAgainstMigratedPostgresSchema`
+  - **Then**: the store works against the migrated schema (migration is Postgres-compatible)
 
 ## `REQ-GDPR-023`  _(unknown to PRODUCT.md)_
 
