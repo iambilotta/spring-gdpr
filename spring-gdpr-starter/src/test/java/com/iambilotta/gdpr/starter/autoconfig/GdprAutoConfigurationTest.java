@@ -98,6 +98,46 @@ class GdprAutoConfigurationTest {
                 com.iambilotta.gdpr.starter.access.AccessExportService.class));
     }
 
+    /**
+     * @spec.given the GDPR autoconfiguration plus a registered ErasureListener and an
+     *             @EventListener for SubjectErasedEvent
+     * @spec.when  the wired ErasureService erases a subject
+     * @spec.then  both the SPI listener and the @EventListener fire once with the subject (issue #37,
+     *             the post-erasure hook for event-sourced/CQRS rebuilds)
+     * @spec.us    REQ-GDPR-023
+     */
+    @Test
+    void wiresPostErasureListenerAndPublishesSubjectErasedEvent() {
+        runner
+                .withUserConfiguration(PostErasureConfig.class)
+                .run(ctx -> {
+                    com.iambilotta.gdpr.starter.erasure.ErasureService service =
+                            ctx.getBean(com.iambilotta.gdpr.starter.erasure.ErasureService.class);
+                    service.eraseSubject("alice-1");
+
+                    PostErasureConfig config = ctx.getBean(PostErasureConfig.class);
+                    assertThat(config.listenerSubjects).containsExactly("alice-1");
+                    assertThat(config.eventSubjects).containsExactly("alice-1");
+                });
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static class PostErasureConfig {
+
+        final java.util.List<String> listenerSubjects = new java.util.ArrayList<>();
+        final java.util.List<String> eventSubjects = new java.util.ArrayList<>();
+
+        @Bean
+        com.iambilotta.gdpr.starter.erasure.ErasureListener captureListener() {
+            return report -> listenerSubjects.add(report.subjectId());
+        }
+
+        @org.springframework.context.event.EventListener
+        void onErased(com.iambilotta.gdpr.starter.erasure.SubjectErasedEvent event) {
+            eventSubjects.add(event.subjectId());
+        }
+    }
+
     @Configuration(proxyBeanMethods = false)
     static class CustomSinkConfig {
 

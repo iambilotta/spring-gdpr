@@ -5,10 +5,10 @@
   },
   "label": "spring-gdpr-starter",
   "coverage": {
-    "total": 97,
-    "with_complete_spec": 62,
+    "total": 101,
+    "with_complete_spec": 66,
     "by_category": {
-      "FR": 97
+      "FR": 101
     }
   },
   "requirements": [
@@ -608,6 +608,23 @@
       }
     },
     {
+      "id": "FR-autoconfig.GdprAutoConfiguration#wiresPostErasureListenerAndPublishesSubjectErasedEvent",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "GdprAutoConfiguration",
+      "method": "wiresPostErasureListenerAndPublishesSubjectErasedEvent",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/GdprAutoConfigurationTest.java",
+      "spec": {
+        "given": "the GDPR autoconfiguration plus a registered ErasureListener and an",
+        "when": "the wired ErasureService erases a subject",
+        "then": "both the SPI listener and the @EventListener fire once with the subject (issue #37, the post-erasure hook for event-sourced/CQRS rebuilds)",
+        "adr": "",
+        "us": "REQ-GDPR-023",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
       "id": "FR-autoconfig.GdprAutoConfiguration#wiresTheAccessExportService",
       "category": "FR",
       "module": "autoconfig",
@@ -705,6 +722,57 @@
         "then": "both replays yield the same read model with the PII blank (idempotent under replay)",
         "adr": "ADR-0009",
         "us": "REQ-GDPR-016",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.ErasureListener#invokesTheListenerOnceWithTheReportAfterErasure",
+      "category": "FR",
+      "module": "erasure",
+      "unit": "ErasureListener",
+      "method": "invokesTheListenerOnceWithTheReportAfterErasure",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/ErasureListenerTest.java",
+      "spec": {
+        "given": "an ErasureService with one registered ErasureListener",
+        "when": "a subject is erased",
+        "then": "the listener is invoked exactly once with the assembled report",
+        "adr": "",
+        "us": "REQ-GDPR-023",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.ErasureListener#isANoOpAndBackwardCompatibleWhenNoListenerIsRegistered",
+      "category": "FR",
+      "module": "erasure",
+      "unit": "ErasureListener",
+      "method": "isANoOpAndBackwardCompatibleWhenNoListenerIsRegistered",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/ErasureListenerTest.java",
+      "spec": {
+        "given": "an ErasureService with no listener registered (the legacy constructor)",
+        "when": "a subject is erased",
+        "then": "the erasure still succeeds and returns its report (backward compatible no-op)",
+        "adr": "",
+        "us": "REQ-GDPR-023",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-erasure.ErasureListener#surfacesAListenerFailureWithoutSwallowingOrUnErasing",
+      "category": "FR",
+      "module": "erasure",
+      "unit": "ErasureListener",
+      "method": "surfacesAListenerFailureWithoutSwallowingOrUnErasing",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/ErasureListenerTest.java",
+      "spec": {
+        "given": "an ErasureService with several listeners, one of which throws",
+        "when": "a subject is erased",
+        "then": "the failure is surfaced (not swallowed) and the other listeners still ran: the erasure itself already happened, a listener fault never silently un-erases it",
+        "adr": "",
+        "us": "REQ-GDPR-023",
         "ac": "",
         "complete": true
       }

@@ -6,9 +6,9 @@ Auto-generated from test sources by tracegate. Do NOT edit by hand: edit the tes
 
 ## Coverage
 
-- Total tests scanned: **97**
-- With complete spec javadoc: **62** (64%)
-- FR: 97
+- Total tests scanned: **101**
+- With complete spec javadoc: **66** (65%)
+- FR: 101
 
 ## Module `access`
 
@@ -220,6 +220,14 @@ Auto-generated from test sources by tracegate. Do NOT edit by hand: edit the tes
 - _(spec missing — add `@spec.given` / `@spec.when` / `@spec.then` javadoc)_
 - **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/GdprAutoConfigurationTest.java`
 
+#### `FR-autoconfig.GdprAutoConfiguration#wiresPostErasureListenerAndPublishesSubjectErasedEvent`
+
+- **Given**: the GDPR autoconfiguration plus a registered ErasureListener and an
+- **When**: the wired ErasureService erases a subject
+- **Then**: both the SPI listener and the @EventListener fire once with the subject (issue #37, the post-erasure hook for event-sourced/CQRS rebuilds)
+- **User Story**: REQ-GDPR-023
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/GdprAutoConfigurationTest.java`
+
 #### `FR-autoconfig.GdprAutoConfiguration#wiresTheAccessExportService`
 
 - **Given**: the GDPR autoconfiguration on the context
@@ -273,6 +281,30 @@ Auto-generated from test sources by tracegate. Do NOT edit by hand: edit the tes
 - **ADR**: ADR-0009
 - **User Story**: REQ-GDPR-016
 - **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/CryptoShreddingErasureTest.java`
+
+#### `FR-erasure.ErasureListener#invokesTheListenerOnceWithTheReportAfterErasure`
+
+- **Given**: an ErasureService with one registered ErasureListener
+- **When**: a subject is erased
+- **Then**: the listener is invoked exactly once with the assembled report
+- **User Story**: REQ-GDPR-023
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/ErasureListenerTest.java`
+
+#### `FR-erasure.ErasureListener#isANoOpAndBackwardCompatibleWhenNoListenerIsRegistered`
+
+- **Given**: an ErasureService with no listener registered (the legacy constructor)
+- **When**: a subject is erased
+- **Then**: the erasure still succeeds and returns its report (backward compatible no-op)
+- **User Story**: REQ-GDPR-023
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/ErasureListenerTest.java`
+
+#### `FR-erasure.ErasureListener#surfacesAListenerFailureWithoutSwallowingOrUnErasing`
+
+- **Given**: an ErasureService with several listeners, one of which throws
+- **When**: a subject is erased
+- **Then**: the failure is surfaced (not swallowed) and the other listeners still ran: the erasure itself already happened, a listener fault never silently un-erases it
+- **User Story**: REQ-GDPR-023
+- **File**: `spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/erasure/ErasureListenerTest.java`
 
 #### `FR-erasure.ErasureService#aggregatesAffectedCountsByType`
 
