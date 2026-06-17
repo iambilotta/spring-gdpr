@@ -155,6 +155,59 @@ Distributed via [JitPack](https://jitpack.io/#iambilotta/spring-gdpr). **Maven C
 </repositories>
 ```
 
+> **JitPack authentication (you will hit HTTP 401 without this).** JitPack requires the
+> repository to be authorized in the maintainer's JitPack account before artifacts are
+> served, even for public GitHub repos. This repo is authorized. However, some CI
+> environments and corporate Maven setups need an explicit auth token to resolve from
+> `jitpack.io`. If you see `status code: 401, Unauthorized` / "No access token" in your
+> build log, add the token wiring below. The token is free: log in at
+> [jitpack.io](https://jitpack.io) with your GitHub account, go to **Account > API token**,
+> and copy the personal token shown there.
+>
+> **Maven** (`~/.m2/settings.xml` or CI secret injected as `JITPACK_TOKEN`):
+>
+> ```xml
+> <settings>
+>   <servers>
+>     <server>
+>       <id>jitpack.io</id>          <!-- must match the <repository><id> above -->
+>       <username>your-github-username</username>
+>       <password>${env.JITPACK_TOKEN}</password>
+>     </server>
+>   </servers>
+> </settings>
+> ```
+>
+> In CI (GitHub Actions, Cloud Build, etc.) expose the token as the `JITPACK_TOKEN`
+> environment variable and Maven will pick it up via `${env.JITPACK_TOKEN}`. Do not commit
+> the token value into your `pom.xml` or `settings.xml`.
+>
+> **Gradle** (`~/.gradle/gradle.properties` or equivalent CI secret):
+>
+> ```properties
+> # gradle.properties (not committed to source control)
+> jitpackToken=your-jitpack-token
+> ```
+>
+> ```kotlin
+> // build.gradle.kts
+> repositories {
+>     maven {
+>         url = uri("https://jitpack.io")
+>         credentials {
+>             username = ""                              // JitPack ignores the username
+>             password = providers.gradleProperty("jitpackToken").getOrElse("")
+>         }
+>     }
+> }
+> ```
+>
+> If resolution still fails without a token (anonymous access works for most public builds),
+> try opening `https://jitpack.io/#iambilotta/spring-gdpr` in a browser while signed in to
+> JitPack: this triggers a build for the requested tag and warms the artifact cache.
+> See [JitPack docs](https://jitpack.io/docs/) for further detail on private-repo auth and
+> organization-level tokens.
+
 **2. Add the runtime starter:**
 
 ```xml
