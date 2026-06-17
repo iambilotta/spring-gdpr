@@ -292,6 +292,31 @@ And a later write for that subject is refused (tombstone, no resurrection)
 And the audit trail still proves the erasure happened (who, when, why)
 ```
 
+### REQ-GDPR-023 | Post-erasure signal for event-sourced / CQRS consumers (Art.17 follow-on)
+- categoria: funzionale
+- priorità: S
+- fonte: GDPR Art.17 follow-on; dogfooding gap (event-sourced consumers reacting to a forgettable-payload erasure); issue #37
+- rationale: the forgettable-payload pattern (REQ-GDPR-022, ADR-0010) makes a reference unresolvable, and crypto-shredding (REQ-GDPR-016, ADR-0009) makes inline ciphertext unreadable, but a read model / projection that resolved that reference has no signal to rebuild or invalidate, short of polling. The erasure flow had no post-erasure extension point
+- trace-to: `implementato` — `ErasureListener` SPI + `SubjectErasedEvent` (Spring `ApplicationEvent`), fired once by `ErasureService.eraseSubject` after the handlers commit; wired by `GdprAutoConfiguration` (every `ErasureListener` bean + the context `ApplicationEventPublisher`); failure surfaced as `ErasureListenerException` (never un-erases). `ErasureListenerTest` (listener invoked once with the report; no-op + backward-compatible with no listener; a faulty listener is surfaced without swallowing or un-erasing), `GdprAutoConfigurationTest#wiresPostErasureListenerAndPublishesSubjectErasedEvent`
+- depends-on: REQ-GDPR-022
+- stato: implementato
+
+WHEN `ErasureService.eraseSubject` has honoured a subject's erasure across every handler, the system
+SHALL emit exactly one post-erasure signal carrying the report (an `ErasureListener.onSubjectErased`
+invocation and a published `SubjectErasedEvent`), so an event-sourced / CQRS consumer can rebuild a
+projection or invalidate a cache that held a now-dangling reference. With no listener registered the
+emission is a no-op (backward compatible); a listener that fails SHALL surface (logged) and SHALL NOT
+un-erase the subject.
+
+```gherkin
+Given a subject whose erasure is honoured by the registered handlers
+When the erasure completes
+Then every registered ErasureListener is invoked exactly once with the report
+And a SubjectErasedEvent is published for that subject
+And a failing listener is surfaced (not swallowed) while the subject stays erased
+And with no listener registered the erasure still succeeds (no-op)
+```
+
 ### REQ-GDPR-018 | Structured-log PII redaction (Art.5(1)(f))
 - categoria: qos-constraint
 - priorità: S
@@ -353,3 +378,4 @@ not ready in this repo.
 - 2026-06-08 | REQ-GDPR-001..021 | created | first hand-authored EARS to-be spec of the library itself; 14 implementato (each with a hand-verified trace to an existing test/class), 7 proposto (category taxonomy, append-only erasure + its strategy ADR, log-redaction, Art.15 export, plus the ADR-0008 deferred consent/portability); strategy for append-only erasure deferred to a future ADR (REQ-GDPR-017)
 - 2026-06-08 | REQ-GDPR-016, REQ-GDPR-017 | proposto -> implementato | crypto-shredding shipped under ADR-0009 (accepted): per-subject AES-256-GCM key store (`SubjectKeyStore` SPI + JDBC default, `gdpr_subject_key`/V2), `AesGcmCryptoShredder`, `CryptoShreddingErasureHandler` (drop-the-key + audit fact); `CryptoShreddingErasureTest` un-`@Disabled` (4 GREEN) plus `AesGcmCryptoShredderTest`/`JdbcSubjectKeyStoreTest`
 - 2026-06-08 | REQ-GDPR-022 | created -> implementato | forgettable-payload external store made the PRIMARY personal-data erasure path (ADR-0010), crypto-shredding repositioned as the exception (pseudonymisation vs anonymisation, Recital 26 / EDPB 01/2025): `ForgettablePayloadStore` SPI + `JdbcForgettablePayloadStore` (`gdpr_forgettable_payload`/V3) + `InMemoryForgettablePayloadStore`, `ForgettablePayloadReference`, `ForgettablePayloadResolver` (fail-closed), `ForgettablePayloadErasureHandler` (DELETE + audit fact), `CompositeSubjectErasureHandler` (erase across both), `@GdprPersonalData.storage` axis; 27 new GREEN tests across 7 classes
+- 2026-06-17 | REQ-GDPR-023 | created -> implementato | post-erasure SPI (issue #37): `ErasureListener` SPI + `SubjectErasedEvent` fired once by `ErasureService.eraseSubject` after the handlers commit, the hook for event-sourced / CQRS consumers to rebuild a projection that held a now-dangling forgettable-payload reference; wired by `GdprAutoConfiguration` (every listener bean + the context `ApplicationEventPublisher`), failure surfaced as `ErasureListenerException` without un-erasing, no-op + backward-compatible with no listener; `ErasureListenerTest` (3) + `GdprAutoConfigurationTest#wiresPostErasureListenerAndPublishesSubjectErasedEvent`

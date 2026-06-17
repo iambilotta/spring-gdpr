@@ -21,6 +21,14 @@ by area: **Annotations**, **Runtime**, **Build-time**, **DX**, **Migrations**,
   `CompositeSubjectErasureHandler` to erase across both the forgettable store and the crypto key
   store as one unit.
 - **Migrations:** `V3__gdpr_forgettable_payload.sql` (`gdpr_forgettable_payload` external PII store).
+- **Runtime:** post-erasure SPI ([#37](https://github.com/iambilotta/spring-gdpr/issues/37)):
+  `ErasureListener` (`onSubjectErased(ErasureReport)`) and a `SubjectErasedEvent` Spring
+  `ApplicationEvent`, fired once by `ErasureService.eraseSubject` after the handlers commit. The hook
+  for event-sourced / CQRS consumers to rebuild a projection or invalidate a cache that held a
+  now-dangling forgettable-payload reference (ADR-0010). Auto-wired (every `ErasureListener` bean +
+  the context `ApplicationEventPublisher`); a listener failure is surfaced as
+  `ErasureListenerException` and never un-erases the subject. Backward compatible: no-op with no
+  listener (new `ErasureService` constructors, the legacy one preserved).
 
 ### Changed
 - **Docs:** crypto-shredding (ADR-0009) repositioned as the **secondary / exception** mechanism.

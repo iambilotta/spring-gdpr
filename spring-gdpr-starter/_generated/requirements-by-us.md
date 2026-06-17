@@ -4,8 +4,8 @@ Auto-generated companion to `requirements.md`. Tests link to a User Story via th
 
 ## Coverage
 
-- Total tests scanned: **97**
-- Tests linked to a User Story: **62**
+- Total tests scanned: **101**
+- Tests linked to a User Story: **66**
 - Tests without `@spec.us` (implementation detail): **35**
 - User Stories declared in PRODUCT.md: **0**
 - User Stories with at least one linked test: **0**
@@ -120,6 +120,17 @@ Auto-generated companion to `requirements.md`. Tests link to a User Story via th
   - **Then**: construction fails fast before any SQL is built (injection-safe)
 - `FR-erasure.forgettable.JdbcForgettablePayloadStore#resolveOfMissingFieldIsEmpty`
   - **Then**: resolve returns empty (fail-closed: a missing value is never a partial/placeholder)
+
+## `REQ-GDPR-023`  _(unknown to PRODUCT.md)_
+
+- `FR-autoconfig.GdprAutoConfiguration#wiresPostErasureListenerAndPublishesSubjectErasedEvent`
+  - **Then**: both the SPI listener and the @EventListener fire once with the subject (issue #37, the post-erasure hook for event-sourced/CQRS rebuilds)
+- `FR-erasure.ErasureListener#invokesTheListenerOnceWithTheReportAfterErasure`
+  - **Then**: the listener is invoked exactly once with the assembled report
+- `FR-erasure.ErasureListener#isANoOpAndBackwardCompatibleWhenNoListenerIsRegistered`
+  - **Then**: the erasure still succeeds and returns its report (backward compatible no-op)
+- `FR-erasure.ErasureListener#surfacesAListenerFailureWithoutSwallowingOrUnErasing`
+  - **Then**: the failure is surfaced (not swallowed) and the other listeners still ran: the erasure itself already happened, a listener fault never silently un-erases it
 
 ## `US-DX-001-honest-erasure-error-contract`  _(unknown to PRODUCT.md)_
 

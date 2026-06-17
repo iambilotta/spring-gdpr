@@ -303,6 +303,25 @@ It is the secondary path on purpose. Encryption with a separately-held key is, i
 
 When a subject's data is split across both paths, register both handlers (the erasure orchestration runs every handler) or wrap them in a `CompositeSubjectErasureHandler`, which erases across both as one unit and sums the affected counts so neither path is forgotten.
 
+### React after erasure (event-sourced / CQRS rebuilds)
+
+The forgettable-payload pattern leaves the read side with a reference that now resolves to nothing (the same way a crypto-shred drop makes inline ciphertext unreadable). Read models that resolved that reference (a display name on a projection, a cached value) must heal: rebuild the projection, invalidate the cache, re-render the now-opaque ref. After `ErasureService.eraseSubject` honours the request, the library gives you a deterministic signal so you do not poll. Two equivalent hooks, both fire once per successful erasure, after the handlers committed:
+
+```java
+// SPI: implement and register as a bean (no Spring context needed)
+@Bean ErasureListener rebuildProjections(ProjectionRebuilder rebuilder) {
+    return report -> rebuilder.rebuildFor(report.subjectId());   // report.affectedByType() = per-type counts
+}
+
+// or the Spring-native event
+@EventListener
+void onErased(SubjectErasedEvent event) {
+    rebuilder.rebuildFor(event.subjectId());
+}
+```
+
+The erasure has already committed by the time a listener runs, so a listener that throws never un-erases the subject: the other listeners still run and the failure is surfaced as an `ErasureListenerException` (logged, never swallowed) rather than silently lost. Make a listener idempotent, since a rebuild may be retried. With no listener and no `@EventListener` this is a no-op (backward compatible). Pairs with [ADR-0009](docs/adr/0009-append-only-erasure-crypto-shredding.md) / [ADR-0010](docs/adr/0010-forgettable-payload-primary-pattern.md).
+
 ## Annotations
 
 | Annotation | Target | What it does | Where it surfaces |

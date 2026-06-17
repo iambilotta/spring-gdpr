@@ -15,6 +15,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -31,6 +32,7 @@ import com.iambilotta.gdpr.starter.audit.PersonalDataAccessAdvisor;
 import com.iambilotta.gdpr.starter.audit.Slf4jAuditSink;
 import com.iambilotta.gdpr.starter.audit.SubjectIdResolver;
 import com.iambilotta.gdpr.starter.erasure.ErasureHandler;
+import com.iambilotta.gdpr.starter.erasure.ErasureListener;
 import com.iambilotta.gdpr.starter.erasure.ErasureService;
 import com.iambilotta.gdpr.starter.retention.RetentionScheduler;
 import com.iambilotta.gdpr.starter.retention.RetentionTarget;
@@ -113,11 +115,24 @@ public class GdprAutoConfiguration {
         return new PersonalDataAccessAdvisor(sink, actorResolver, subjectIdResolver);
     }
 
+    /**
+     * The Art. 17 orchestrator. Wires every {@link ErasureHandler} the adopter registered, plus the
+     * post-erasure extension points (issue #37): every {@link ErasureListener} bean and the context's
+     * {@link ApplicationEventPublisher}, so an event-sourced / CQRS consumer can rebuild a projection
+     * after a forgettable-payload reference is erased (ADR-0010). No listener registered = no-op.
+     */
     @Bean
     @ConditionalOnMissingBean
-    public ErasureService gdprErasureService(ObjectProvider<ErasureHandler> handlers) {
-        List<ErasureHandler> resolved = handlers.orderedStream().toList();
-        return new ErasureService(resolved.isEmpty() ? Collections.emptyList() : resolved);
+    public ErasureService gdprErasureService(
+            ObjectProvider<ErasureHandler> handlers,
+            ObjectProvider<ErasureListener> listeners,
+            ApplicationEventPublisher eventPublisher) {
+        List<ErasureHandler> resolvedHandlers = handlers.orderedStream().toList();
+        List<ErasureListener> resolvedListeners = listeners.orderedStream().toList();
+        return new ErasureService(
+                resolvedHandlers.isEmpty() ? Collections.emptyList() : resolvedHandlers,
+                resolvedListeners,
+                eventPublisher);
     }
 
     /**
