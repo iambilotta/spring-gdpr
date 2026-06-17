@@ -4,8 +4,8 @@ Auto-generated companion to `requirements.md`. Tests link to a User Story via th
 
 ## Coverage
 
-- Total tests scanned: **101**
-- Tests linked to a User Story: **66**
+- Total tests scanned: **107**
+- Tests linked to a User Story: **72**
 - Tests without `@spec.us` (implementation detail): **35**
 - User Stories declared in PRODUCT.md: **0**
 - User Stories with at least one linked test: **0**
@@ -131,6 +131,21 @@ Auto-generated companion to `requirements.md`. Tests link to a User Story via th
   - **Then**: the erasure still succeeds and returns its report (backward compatible no-op)
 - `FR-erasure.ErasureListener#surfacesAListenerFailureWithoutSwallowingOrUnErasing`
   - **Then**: the failure is surfaced (not swallowed) and the other listeners still ran: the erasure itself already happened, a listener fault never silently un-erases it
+
+## `REQ-GDPR-024`  _(unknown to PRODUCT.md)_
+
+- `FR-autoconfig.DeclarativeErasureWiring#autoWiresACryptoShreddingHandlerForACryptoShredAnnotatedType`
+  - **Then**: a CryptoShreddingErasureHandler for that type is auto-wired and visible to the ErasureService (issue #36, the declarative bridge to the ADR-0009 machinery)
+- `FR-autoconfig.DeclarativeErasureWiring#autoWiresAForgettablePayloadHandlerForAForgettableAnnotatedTypeWithItsOrder`
+  - **Then**: a ForgettablePayloadErasureHandler is auto-wired with the declared order and is visible to the ErasureService (issue #36, the ADR-0010 primary path, declarative)
+- `FR-autoconfig.DeclarativeErasureWiring#contributesAnInMemoryForgettableStoreFallbackWhenNoDataSourceIsPresent`
+  - **Then**: an in-memory ForgettablePayloadStore is contributed as the dev/test fallback
+- `FR-autoconfig.DeclarativeErasureWiring#contributesAnInMemoryKeyStoreFallbackWhenNoDataSourceIsPresent`
+  - **Then**: an in-memory SubjectKeyStore is contributed (dev/test fallback) and the wired handler runs end to end against it
+- `FR-autoconfig.DeclarativeErasureWiring#doesNotAutoWireAHandlerForTheLegacyDeleteStrategy`
+  - **Then**: no library handler is auto-wired for it: DELETE/ANONYMIZE/PSEUDONYMIZE stay the adopter's ErasureHandler (ADR-0004), only the append-only-safe strategies are wired
+- `FR-autoconfig.DeclarativeErasureWiring#theDefaultStoreBeansAreOverridable`
+  - **Then**: the adopter's store wins (the default is @ConditionalOnMissingBean, overridable)
 
 ## `US-DX-001-honest-erasure-error-contract`  _(unknown to PRODUCT.md)_
 

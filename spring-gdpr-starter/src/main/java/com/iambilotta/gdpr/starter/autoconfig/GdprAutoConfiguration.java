@@ -18,6 +18,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import com.iambilotta.gdpr.starter.GdprProperties;
@@ -34,6 +35,13 @@ import com.iambilotta.gdpr.starter.audit.SubjectIdResolver;
 import com.iambilotta.gdpr.starter.erasure.ErasureHandler;
 import com.iambilotta.gdpr.starter.erasure.ErasureListener;
 import com.iambilotta.gdpr.starter.erasure.ErasureService;
+import com.iambilotta.gdpr.starter.erasure.crypto.InMemorySubjectKeyStore;
+import com.iambilotta.gdpr.starter.erasure.crypto.JdbcSubjectKeyStore;
+import com.iambilotta.gdpr.starter.erasure.crypto.SubjectKeyStore;
+import com.iambilotta.gdpr.starter.erasure.forgettable.ForgettablePayloadResolver;
+import com.iambilotta.gdpr.starter.erasure.forgettable.ForgettablePayloadStore;
+import com.iambilotta.gdpr.starter.erasure.forgettable.InMemoryForgettablePayloadStore;
+import com.iambilotta.gdpr.starter.erasure.forgettable.JdbcForgettablePayloadStore;
 import com.iambilotta.gdpr.starter.retention.RetentionScheduler;
 import com.iambilotta.gdpr.starter.retention.RetentionTarget;
 import com.iambilotta.gdpr.starter.web.GdprController;
@@ -153,6 +161,57 @@ public class GdprAutoConfiguration {
             return true;
         } catch (ClassNotFoundException ex) {
             return false;
+        }
+    }
+
+    /**
+     * Declarative append-only-safe erasure (issue #36). Contributes the default store beans for the
+     * two library-owned strategies and imports {@link GdprErasableScannerRegistrar}, which scans the
+     * application packages and auto-wires a {@code CryptoShreddingErasureHandler} /
+     * {@code ForgettablePayloadErasureHandler} per type that declares
+     * {@code @GdprErasable(strategy = CRYPTO_SHRED | FORGETTABLE)}. Each store bean is
+     * {@code @ConditionalOnMissingBean}, so an adopter overrides it (e.g. a KMS-backed key store or a
+     * PII-vault payload store) just by declaring their own.
+     *
+     * <p>The default store is JDBC when a {@link DataSource} and {@code JdbcTemplate} are present, and
+     * an in-memory store otherwise, mirroring the audit-sink fallback so the app starts in dev / tests
+     * without a DB. The in-memory store is logged as not-for-production (keys / values live only in the
+     * heap and vanish on restart, an involuntary erasure of everyone).
+     */
+    @Configuration(proxyBeanMethods = false)
+    @Import(GdprErasableScannerRegistrar.class)
+    public static class ErasureStrategyConfig {
+
+        @Bean
+        @ConditionalOnMissingBean
+        public SubjectKeyStore gdprSubjectKeyStore(ObjectProvider<DataSource> dataSourceProvider) {
+            DataSource dataSource = dataSourceProvider.getIfAvailable();
+            if (isJdbcTemplateOnClasspath() && dataSource != null) {
+                return new JdbcSubjectKeyStore(dataSource);
+            }
+            LOG.warn("No DataSource / spring-jdbc for the crypto-shred key store; using an in-memory "
+                    + "SubjectKeyStore. NOT for production (keys live in the heap and vanish on restart, "
+                    + "an involuntary erasure). Provide a DataSource or a KMS-backed SubjectKeyStore bean.");
+            return new InMemorySubjectKeyStore();
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        public ForgettablePayloadStore gdprForgettablePayloadStore(ObjectProvider<DataSource> dataSourceProvider) {
+            DataSource dataSource = dataSourceProvider.getIfAvailable();
+            if (isJdbcTemplateOnClasspath() && dataSource != null) {
+                return new JdbcForgettablePayloadStore(dataSource);
+            }
+            LOG.warn("No DataSource / spring-jdbc for the forgettable-payload store; using an in-memory "
+                    + "ForgettablePayloadStore. NOT for production (values live in the heap and vanish on "
+                    + "restart). Provide a DataSource or a vault-backed ForgettablePayloadStore bean.");
+            return new InMemoryForgettablePayloadStore();
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        public ForgettablePayloadResolver gdprForgettablePayloadResolver(ForgettablePayloadStore store) {
+            return new ForgettablePayloadResolver(store);
         }
     }
 

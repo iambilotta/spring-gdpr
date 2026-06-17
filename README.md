@@ -303,6 +303,20 @@ It is the secondary path on purpose. Encryption with a separately-held key is, i
 
 When a subject's data is split across both paths, register both handlers (the erasure orchestration runs every handler) or wrap them in a `CompositeSubjectErasureHandler`, which erases across both as one unit and sums the affected counts so neither path is forgotten.
 
+### Declarative: skip the wiring
+
+You do not have to hand-wire the handler at all. Declare the strategy on the type and the starter wires the matching handler for you:
+
+```java
+@GdprErasable(strategy = Strategy.FORGETTABLE)              // -> ForgettablePayloadErasureHandler, auto-wired
+record CustomerSnapshot(String subjectId, ForgettablePayloadReference fullName) {}
+
+@GdprErasable(strategy = Strategy.CRYPTO_SHRED, order = 20) // -> CryptoShreddingErasureHandler, auto-wired
+record SignedAgreementEvent(String subjectId, byte[] encryptedTerms) {}
+```
+
+The starter scans your application packages for `@GdprErasable` types whose strategy is `FORGETTABLE` or `CRYPTO_SHRED` and registers one handler per type, so `DELETE /gdpr/erasure/{subjectId}` routes them through the existing machinery with **zero** `@Configuration`. It also contributes the backing store beans (`ForgettablePayloadStore` + `ForgettablePayloadResolver`, or `SubjectKeyStore`): JDBC when a `DataSource` is present (apply migration `V3` / `V2`), in-memory otherwise (dev/test only, logged). Every contributed bean is `@ConditionalOnMissingBean`, so declaring your own (a KMS-backed `SubjectKeyStore`, a PII-vault `ForgettablePayloadStore`) overrides it. The declared `order()` flows to the handler for FK-safe sequencing, and the strategy is named in the generated DPIA. `DELETE` / `ANONYMIZE` / `PSEUDONYMIZE` are untouched: they stay your own `ErasureHandler` (the library cannot know how to delete an arbitrary store, [ADR-0004](docs/adr/0004-erasure-handler-orchestration.md)).
+
 ### React after erasure (event-sourced / CQRS rebuilds)
 
 The forgettable-payload pattern leaves the read side with a reference that now resolves to nothing (the same way a crypto-shred drop makes inline ciphertext unreadable). Read models that resolved that reference (a display name on a projection, a cached value) must heal: rebuild the projection, invalidate the cache, re-render the now-opaque ref. After `ErasureService.eraseSubject` honours the request, the library gives you a deterministic signal so you do not poll. Two equivalent hooks, both fire once per successful erasure, after the handlers committed:
@@ -330,7 +344,7 @@ The erasure has already committed by the time a listener runs, so a listener tha
 | `@GdprDataSubjects` | type | Lists data-subject categories | ROPA "data subjects" column |
 | `@GdprLegalBasis` | type, method | Lawful basis (Article 6 / 9 / 10). Build warns if missing on a ROPA record | ROPA "legal basis" column |
 | `@GdprRetention` | type | Retention period + strategy (delete / anonymize / pseudonymize) | ROPA + retention sweep |
-| `@GdprErasable` | type | Right-to-erasure participation, FK-safe ordering | DPIA + erasure flow |
+| `@GdprErasable` | type | Right-to-erasure participation, FK-safe ordering. `strategy = FORGETTABLE` / `CRYPTO_SHRED` auto-wires the library's handler; `DELETE` / `ANONYMIZE` / `PSEUDONYMIZE` stay your own | DPIA + erasure flow |
 
 Article 9 special categories (health, biometric) and Article 10 (criminal convictions) compose: `specialBasis` / `criminalBasis` on `@GdprLegalBasis` produce a composite reference like `6(1)(b) + 9(2)(h)` in the audit row.
 

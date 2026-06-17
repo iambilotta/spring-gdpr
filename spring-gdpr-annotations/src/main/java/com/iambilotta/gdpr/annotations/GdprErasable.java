@@ -44,6 +44,31 @@ public @interface GdprErasable {
     enum Strategy {
         DELETE,
         ANONYMIZE,
-        PSEUDONYMIZE
+        PSEUDONYMIZE,
+
+        /**
+         * Forgettable-payload erasure (the PRIMARY append-only-safe pattern, ADR-0010): the type's
+         * personal data lives in an external {@code ForgettablePayloadStore}, and erasure is an actual
+         * {@code DELETE} of those rows while the immutable carrier keeps only a dangling reference.
+         *
+         * <p>Declaring it auto-wires a {@code ForgettablePayloadErasureHandler} for this type with no
+         * hand config (the starter contributes the store + resolver beans, overridable). Prefer this
+         * over {@link #CRYPTO_SHRED} for personal data: deleting the value is anonymisation, whereas a
+         * dropped key leaves ciphertext that is, in law, still pseudonymised personal data (Recital 26,
+         * EDPB 01/2025).
+         */
+        FORGETTABLE,
+
+        /**
+         * Crypto-shredding erasure (the append-only-safe EXCEPTION, ADR-0009): the type's personal data
+         * is encrypted inline with a per-subject key, and erasure is the drop of that key, after which
+         * the byte-immutable ciphertext is permanently unreadable while no event is touched.
+         *
+         * <p>Declaring it auto-wires a {@code CryptoShreddingErasureHandler} for this type with no hand
+         * config (the starter contributes the key store + shredder beans, overridable). Use only where
+         * an immutable event must legally carry the value inline and externalising it via
+         * {@link #FORGETTABLE} is not acceptable (a signed/notarised event, an integrity requirement).
+         */
+        CRYPTO_SHRED
     }
 }

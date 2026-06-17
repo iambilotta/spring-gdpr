@@ -317,6 +317,31 @@ And a failing listener is surfaced (not swallowed) while the subject stays erase
 And with no listener registered the erasure still succeeds (no-op)
 ```
 
+### REQ-GDPR-024 | Declarative append-only-safe erasure (auto-wire the crypto / forgettable handler)
+- categoria: funzionale
+- priorità: S
+- fonte: GDPR Art.17; DX gap (a real Axon consumer hand-wired the forgettable store because there was no first-class strategy); issue #36
+- rationale: the crypto-shredding (REQ-GDPR-016, ADR-0009) and forgettable-payload (REQ-GDPR-022, ADR-0010) machinery existed, but `@GdprErasable.Strategy` was only `{DELETE, ANONYMIZE, PSEUDONYMIZE}`, so a type erased by an append-only-safe path could not declare it and the adopter had to hand-wire the handler in a `@Configuration`. The annotation set was not the single honest record of how each type is erased
+- trace-to: `implementato` — `GdprErasable.Strategy` gains `FORGETTABLE` + `CRYPTO_SHRED`; `GdprErasableScannerRegistrar` (an `ImportBeanDefinitionRegistrar`) scans the auto-config base packages and registers one `ForgettablePayloadErasureHandler` / `CryptoShreddingErasureHandler` per declaring type, collaborators wired by type; `GdprAutoConfiguration.ErasureStrategyConfig` contributes the default `SubjectKeyStore` / `ForgettablePayloadStore` / `ForgettablePayloadResolver` beans (`@ConditionalOnMissingBean`, JDBC-or-in-memory fallback); the DPIA names the strategy via the existing `ann.strategy().name()`. `DeclarativeErasureWiringTest` (auto-wires the crypto handler; auto-wires the forgettable handler with its order; DELETE is NOT auto-wired; in-memory store fallbacks; the store beans are overridable)
+- depends-on: REQ-GDPR-016, REQ-GDPR-022
+- stato: implementato
+
+WHEN a type declares `@GdprErasable(strategy = CRYPTO_SHRED)` or `@GdprErasable(strategy = FORGETTABLE)`,
+the system SHALL route that type's right-to-erasure through the matching append-only-safe handler with
+no manual bean wiring (the starter contributes and auto-wires the handler + its backing store,
+overridable), SHALL preserve the append-only invariant (no event mutated/deleted; only the key dropped
+or the external row deleted), and SHALL name the chosen strategy in the generated DPIA. The legacy
+strategies (DELETE / ANONYMIZE / PSEUDONYMIZE) SHALL remain the adopter's own `ErasureHandler`.
+
+```gherkin
+Given a type annotated @GdprErasable(strategy = CRYPTO_SHRED or FORGETTABLE) and no hand-wired handler
+When the application context starts
+Then a CryptoShreddingErasureHandler or ForgettablePayloadErasureHandler is auto-wired for that type
+And the DELETE /gdpr/erasure/{subjectId} flow runs it through the existing machinery
+And the generated DPIA names the strategy
+And a type annotated with DELETE/ANONYMIZE/PSEUDONYMIZE gets no library handler (it stays the adopter's)
+```
+
 ### REQ-GDPR-018 | Structured-log PII redaction (Art.5(1)(f))
 - categoria: qos-constraint
 - priorità: S
@@ -379,3 +404,4 @@ not ready in this repo.
 - 2026-06-08 | REQ-GDPR-016, REQ-GDPR-017 | proposto -> implementato | crypto-shredding shipped under ADR-0009 (accepted): per-subject AES-256-GCM key store (`SubjectKeyStore` SPI + JDBC default, `gdpr_subject_key`/V2), `AesGcmCryptoShredder`, `CryptoShreddingErasureHandler` (drop-the-key + audit fact); `CryptoShreddingErasureTest` un-`@Disabled` (4 GREEN) plus `AesGcmCryptoShredderTest`/`JdbcSubjectKeyStoreTest`
 - 2026-06-08 | REQ-GDPR-022 | created -> implementato | forgettable-payload external store made the PRIMARY personal-data erasure path (ADR-0010), crypto-shredding repositioned as the exception (pseudonymisation vs anonymisation, Recital 26 / EDPB 01/2025): `ForgettablePayloadStore` SPI + `JdbcForgettablePayloadStore` (`gdpr_forgettable_payload`/V3) + `InMemoryForgettablePayloadStore`, `ForgettablePayloadReference`, `ForgettablePayloadResolver` (fail-closed), `ForgettablePayloadErasureHandler` (DELETE + audit fact), `CompositeSubjectErasureHandler` (erase across both), `@GdprPersonalData.storage` axis; 27 new GREEN tests across 7 classes
 - 2026-06-17 | REQ-GDPR-023 | created -> implementato | post-erasure SPI (issue #37): `ErasureListener` SPI + `SubjectErasedEvent` fired once by `ErasureService.eraseSubject` after the handlers commit, the hook for event-sourced / CQRS consumers to rebuild a projection that held a now-dangling forgettable-payload reference; wired by `GdprAutoConfiguration` (every listener bean + the context `ApplicationEventPublisher`), failure surfaced as `ErasureListenerException` without un-erasing, no-op + backward-compatible with no listener; `ErasureListenerTest` (3) + `GdprAutoConfigurationTest#wiresPostErasureListenerAndPublishesSubjectErasedEvent`
+- 2026-06-17 | REQ-GDPR-024 | created -> implementato | declarative append-only-safe erasure (issue #36): `@GdprErasable.Strategy` gains `FORGETTABLE` + `CRYPTO_SHRED`; `GdprErasableScannerRegistrar` scans the app packages and auto-wires the matching library `ErasureHandler` per declaring type, `GdprAutoConfiguration.ErasureStrategyConfig` contributes the overridable `SubjectKeyStore`/`ForgettablePayloadStore`/`ForgettablePayloadResolver` beans (JDBC-or-in-memory); DELETE/ANONYMIZE/PSEUDONYMIZE stay the adopter's; DPIA names the strategy via the existing rendering; `DeclarativeErasureWiringTest` (6 GREEN)

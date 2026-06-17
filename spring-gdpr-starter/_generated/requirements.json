@@ -5,10 +5,10 @@
   },
   "label": "spring-gdpr-starter",
   "coverage": {
-    "total": 101,
-    "with_complete_spec": 66,
+    "total": 107,
+    "with_complete_spec": 72,
     "by_category": {
-      "FR": 101
+      "FR": 107
     }
   },
   "requirements": [
@@ -520,6 +520,108 @@
         "us": "",
         "ac": "",
         "complete": false
+      }
+    },
+    {
+      "id": "FR-autoconfig.DeclarativeErasureWiring#autoWiresACryptoShreddingHandlerForACryptoShredAnnotatedType",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "DeclarativeErasureWiring",
+      "method": "autoWiresACryptoShreddingHandlerForACryptoShredAnnotatedType",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/DeclarativeErasureWiringTest.java",
+      "spec": {
+        "given": "a type annotated @GdprErasable(strategy = CRYPTO_SHRED) and no hand-wired handler",
+        "when": "the context starts with that type's package as the scanned base",
+        "then": "a CryptoShreddingErasureHandler for that type is auto-wired and visible to the ErasureService (issue #36, the declarative bridge to the ADR-0009 machinery)",
+        "adr": "ADR-0009",
+        "us": "REQ-GDPR-024",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-autoconfig.DeclarativeErasureWiring#autoWiresAForgettablePayloadHandlerForAForgettableAnnotatedTypeWithItsOrder",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "DeclarativeErasureWiring",
+      "method": "autoWiresAForgettablePayloadHandlerForAForgettableAnnotatedTypeWithItsOrder",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/DeclarativeErasureWiringTest.java",
+      "spec": {
+        "given": "a type annotated @GdprErasable(strategy = FORGETTABLE, order = 30)",
+        "when": "the context starts with that type's package as the scanned base",
+        "then": "a ForgettablePayloadErasureHandler is auto-wired with the declared order and is visible to the ErasureService (issue #36, the ADR-0010 primary path, declarative)",
+        "adr": "ADR-0010",
+        "us": "REQ-GDPR-024",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-autoconfig.DeclarativeErasureWiring#contributesAnInMemoryForgettableStoreFallbackWhenNoDataSourceIsPresent",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "DeclarativeErasureWiring",
+      "method": "contributesAnInMemoryForgettableStoreFallbackWhenNoDataSourceIsPresent",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/DeclarativeErasureWiringTest.java",
+      "spec": {
+        "given": "a FORGETTABLE type with no DataSource",
+        "when": "the context starts",
+        "then": "an in-memory ForgettablePayloadStore is contributed as the dev/test fallback",
+        "adr": "",
+        "us": "REQ-GDPR-024",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-autoconfig.DeclarativeErasureWiring#contributesAnInMemoryKeyStoreFallbackWhenNoDataSourceIsPresent",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "DeclarativeErasureWiring",
+      "method": "contributesAnInMemoryKeyStoreFallbackWhenNoDataSourceIsPresent",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/DeclarativeErasureWiringTest.java",
+      "spec": {
+        "given": "declaring CRYPTO_SHRED with no DataSource on the context",
+        "when": "the context starts",
+        "then": "an in-memory SubjectKeyStore is contributed (dev/test fallback) and the wired handler runs end to end against it",
+        "adr": "",
+        "us": "REQ-GDPR-024",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-autoconfig.DeclarativeErasureWiring#doesNotAutoWireAHandlerForTheLegacyDeleteStrategy",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "DeclarativeErasureWiring",
+      "method": "doesNotAutoWireAHandlerForTheLegacyDeleteStrategy",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/DeclarativeErasureWiringTest.java",
+      "spec": {
+        "given": "a type annotated with the legacy strategy DELETE (the adopter owns the handler)",
+        "when": "the context starts with that type's package as the scanned base",
+        "then": "no library handler is auto-wired for it: DELETE/ANONYMIZE/PSEUDONYMIZE stay the adopter's ErasureHandler (ADR-0004), only the append-only-safe strategies are wired",
+        "adr": "ADR-0004",
+        "us": "REQ-GDPR-024",
+        "ac": "",
+        "complete": true
+      }
+    },
+    {
+      "id": "FR-autoconfig.DeclarativeErasureWiring#theDefaultStoreBeansAreOverridable",
+      "category": "FR",
+      "module": "autoconfig",
+      "unit": "DeclarativeErasureWiring",
+      "method": "theDefaultStoreBeansAreOverridable",
+      "file": "spring-gdpr-starter/src/test/java/com/iambilotta/gdpr/starter/autoconfig/DeclarativeErasureWiringTest.java",
+      "spec": {
+        "given": "an adopter that declares their own SubjectKeyStore bean",
+        "when": "the context starts with a CRYPTO_SHRED type",
+        "then": "the adopter's store wins (the default is @ConditionalOnMissingBean, overridable)",
+        "adr": "",
+        "us": "REQ-GDPR-024",
+        "ac": "",
+        "complete": true
       }
     },
     {
