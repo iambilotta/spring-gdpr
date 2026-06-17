@@ -23,3 +23,7 @@ generated-sources/spring.gdpr/
 
 # maven-shade-plugin artifacts
 **/dependency-reduced-pom.xml
+
+# flatten-maven-plugin: CI-friendly ${revision} resolution writes this transient pom
+# during the build (removed by `mvn clean` via flatten:clean); never committed.
+**/.flattened-pom.xml

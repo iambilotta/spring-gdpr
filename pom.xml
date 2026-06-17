@@ -6,7 +6,7 @@
 
     <groupId>com.iambilotta.gdpr</groupId>
     <artifactId>spring-gdpr-parent</artifactId>
-    <version>2.0.0</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>spring-gdpr (parent)</name>
@@ -48,6 +48,11 @@
     </modules>
 
     <properties>
+        <!-- Single source of the reactor version (Maven CI-friendly versions). Every module
+             coordinate inherits it via ${revision}; bump here only. flatten-maven-plugin
+             resolves it in the installed/deployed poms so consumers never see the literal. -->
+        <revision>2.0.0</revision>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.release>21</maven.compiler.release>
@@ -68,6 +73,7 @@
         <maven-plugin-plugin.version>3.15.2</maven-plugin-plugin.version>
         <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
         <spotless-maven-plugin.version>3.6.0</spotless-maven-plugin.version>
+        <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -177,10 +183,42 @@
                         </java>
                     </configuration>
                 </plugin>
+                <!-- Maven CI-friendly versions: ${revision} is the literal version Maven
+                     reads, but the installed/deployed poms must carry the resolved value so
+                     consumers (and JitPack) never see the unresolved property. resolveCiFriendliesOnly
+                     rewrites only ${revision}/${sha1}/${changelist}, leaving the rest of the pom intact.
+                     Inherited by every module; no child needs to redeclare it. -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>${flatten-maven-plugin.version}</version>
+                    <configuration>
+                        <updatePomFile>true</updatePomFile>
+                        <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>flatten</id>
+                            <phase>process-resources</phase>
+                            <goals><goal>flatten</goal></goals>
+                        </execution>
+                        <execution>
+                            <id>flatten-clean</id>
+                            <phase>clean</phase>
+                            <goals><goal>clean</goal></goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
 
         <plugins>
+            <!-- Activate the CI-friendly version flattening for the whole reactor (config +
+                 executions inherited from pluginManagement above). -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>

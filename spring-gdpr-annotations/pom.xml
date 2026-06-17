@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.iambilotta.gdpr</groupId>
         <artifactId>spring-gdpr-parent</artifactId>
-        <version>2.0.0</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>spring-gdpr-annotations</artifactId>
