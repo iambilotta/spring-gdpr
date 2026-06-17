@@ -52,10 +52,12 @@ public final class JdbcForgettablePayloadStore implements ForgettablePayloadStor
     }
 
     public void bootstrapSchema() {
+        // TEXT (unbounded) mirrors V3__gdpr_forgettable_payload.sql: the primary use case is
+        // free-text PII (operator notes, comments) that can easily exceed 4096 characters.
         jdbc.execute("CREATE TABLE IF NOT EXISTS " + table + " ("
                 + "subject_id VARCHAR(255) NOT NULL, "
                 + "field_key  VARCHAR(255) NOT NULL, "
-                + "payload_value VARCHAR(4096), "
+                + "payload_value TEXT, "
                 + "updated_at TIMESTAMP NOT NULL, "
                 + "erased_at  TIMESTAMP, "
                 + "PRIMARY KEY (subject_id, field_key)"

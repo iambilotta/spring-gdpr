@@ -161,6 +161,25 @@ class JdbcForgettablePayloadStoreTest {
     }
 
     /**
+     * @spec.given a free-text PII value longer than 4096 characters (the old VARCHAR cap)
+     * @spec.when  that value is stored and resolved
+     * @spec.then  the full value round-trips without truncation (payload_value is TEXT, unbounded)
+     * @spec.adr   ADR-0010
+     * @spec.us    REQ-GDPR-022
+     */
+    @Test
+    void handlesLargeFreetextPayloadBeyondOldVarcharLimit() {
+        JdbcForgettablePayloadStore store = store();
+        // 8 000-char string: well above the old VARCHAR(4096) cap, representative of a long
+        // operator note or free-text comment (the canonical FORGETTABLE_PAYLOAD use case).
+        String longNote = "A".repeat(8_000);
+
+        store.put("alice-1", "operator_note", longNote);
+
+        assertThat(store.resolve("alice-1", "operator_note")).contains(longNote);
+    }
+
+    /**
      * @spec.given a hostile table name that is not a bare SQL identifier
      * @spec.when  the store is constructed with it
      * @spec.then  construction fails fast before any SQL is built (injection-safe)
