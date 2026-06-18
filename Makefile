@@ -8,7 +8,7 @@
 #   make setup               one-shot per clone: install pinned tracegate + git hooks
 #   make requirements        regenerate every module's _generated/ catalog
 #   make requirements-check  drift-gate: exit 2 if the catalog drifted from the code
-#   make tracegate-install   install tracegate, pinned to the CI commit
+#   make tracegate-install   verify uv is present + warm the pinned-tracegate uvx cache
 #   make install-hooks       install the pre-commit framework hooks (commit + post-merge/post-rewrite)
 #
 # The catalog is GENERATED — never hand-edit a `_generated/*` file. To change a
@@ -19,9 +19,12 @@
 # Pin tracegate to the exact commit CI uses, so local and CI agree byte-for-byte.
 TRACEGATE_REF ?= 3bb94964f1e0502d2e68681611bf5ac335180f4b
 TRACEGATE_PKG := git+https://github.com/iambilotta/tracegate@$(TRACEGATE_REF)
-PIP ?= python3 -m pip
-# PEP 668: a system Python refuses `pip install` without this; harmless on a venv.
-PIP_FLAGS ?= --break-system-packages
+# The pin footgun (sw-scm-005 made enforced): a bare `tracegate` resolves whatever the
+# contributor last `pip install`-ed on PATH, which may differ from TRACEGATE_REF and produce
+# FALSE drift against the committed _generated/ + the CI drift-gate's pinned generator. So EVERY
+# invocation goes through uvx, which builds an ephemeral, exactly-pinned env from TRACEGATE_PKG
+# (cached after the first run, no global pollution). Never call bare `tracegate` in a target/script.
+TRACEGATE := uvx --from "$(TRACEGATE_PKG)" tracegate
 
 .PHONY: help setup requirements requirements-check tracegate-install install-hooks
 
@@ -30,16 +33,22 @@ help:  ## show this help
 		awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 
 setup: tracegate-install install-hooks  ## one-shot per clone: pinned tracegate + git hooks
-	@echo "setup complete: tracegate pinned to $(TRACEGATE_REF), git hooks installed"
+	@echo "setup complete: tracegate pinned to $(TRACEGATE_REF) (via uvx), git hooks installed"
 
-tracegate-install:  ## install tracegate, pinned to the CI commit
-	$(PIP) install --quiet $(PIP_FLAGS) "$(TRACEGATE_PKG)"
+tracegate-install:  ## verify uv is present + warm the pinned-tracegate uvx cache (no global install)
+	# tracegate is no longer installed globally (that was the pin footgun: a stale PATH
+	# `tracegate` shadows the pin and produces FALSE drift). Every target/script runs it via
+	# uvx, an ephemeral exactly-pinned env. This target only checks uv exists and warms the cache.
+	@command -v uvx >/dev/null 2>&1 || { \
+	  echo "uv/uvx not found. Install it: https://docs.astral.sh/uv/getting-started/installation/" >&2; \
+	  exit 1; }
+	$(TRACEGATE) --help >/dev/null
 
 install-hooks:  ## install pre-commit hooks (pre-commit + post-merge + post-rewrite, ADR sw-scm-007)
 	scripts/install-git-hooks.sh
 
 requirements:  ## regenerate the as-built requirements catalog (writes each module's _generated/)
-	tracegate .
+	$(TRACEGATE) .
 
 requirements-check:  ## drift-gate: fail (exit 2) if the committed catalog drifted from the code
-	tracegate . --check
+	$(TRACEGATE) . --check
