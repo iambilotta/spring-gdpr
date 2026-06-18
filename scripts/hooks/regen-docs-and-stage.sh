@@ -3,11 +3,10 @@
 # Idempotent: a clean tree regenerates byte-identical output, so `git add` is a no-op.
 # Owned by .pre-commit-config.yaml; do not call directly (use `make requirements` for that).
 #
-# The generator is the OSS tool `tracegate` (github.com/iambilotta/tracegate), installed
-# pinned by `make setup` (-> make tracegate-install). The pin is the single source of the
-# version (Makefile TRACEGATE_REF, kept in lockstep with the CI `tracegate` job). Running an
-# UNPINNED tracegate here regenerates a different catalog than CI gates against -> false drift,
-# so the pinned install is load-bearing, not a nicety.
+# The generator is the OSS tool `tracegate` (github.com/iambilotta/tracegate). It is run
+# through `uvx` pinned to the Makefile's TRACEGATE_REF (the single source of the pin, kept in
+# lockstep with the CI `tracegate` job), NEVER a bare PATH `tracegate`: a stale PATH install
+# regenerates a different catalog than CI gates against -> FALSE drift. See tracegate-pinned.sh.
 #
 # Apps + labels are NOT passed on the command line: this repo registers them in tracegate.toml
 # (deterministic labels across machines/CI, see that file). The zero-config `tracegate .` is the
@@ -17,13 +16,12 @@ set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 
-if ! command -v tracegate >/dev/null 2>&1; then
-  echo "tracegate not found on PATH. Run 'make setup' (or 'make tracegate-install') once per clone." >&2
-  exit 1
-fi
+# Defines the pinned `TRACEGATE` array (uvx --from git+...@TRACEGATE_REF tracegate) + guards.
+# shellcheck source=scripts/hooks/tracegate-pinned.sh
+source "$(dirname "${BASH_SOURCE[0]}")/tracegate-pinned.sh"
 
 # Regenerate every registered module's catalog into its committed `_generated/` dir.
-tracegate . >/dev/null
+"${TRACEGATE[@]}" . >/dev/null
 
 # Stage every generated artifact (the .md docs AND requirements.json, the machine view the
 # CI drift-gate also verifies) EXCEPT the gitignored ones. `coverage.md` is tracked here but is

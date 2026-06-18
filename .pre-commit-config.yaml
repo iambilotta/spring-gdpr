@@ -8,17 +8,20 @@
 # (`tracegate . --check`, the `tracegate` job). The hooks below regenerate + auto-stage it
 # on every tree-mutating operation so the gate can never catch drift the local dev didn't see.
 #
-# The generator is the OSS tool tracegate, pinned by Makefile TRACEGATE_REF (kept in lockstep
-# with the CI job's env). `make setup` installs that exact pin onto PATH.
+# The generator is the OSS tool tracegate, run through the PINNED uvx env (Makefile
+# TRACEGATE_REF, kept in lockstep with the CI job's env; see scripts/hooks/tracegate-pinned.sh),
+# never a bare PATH `tracegate`. `make setup` only verifies uv is present + warms the cache.
 repos:
   - repo: local
     hooks:
       - id: regen-generated-docs
         name: regenerate */_generated/*.md + auto-stage
         # Idempotent: clean tree -> byte-identical output -> no-op. Running it on every commit
-        # is what makes the catalog unable to drift away from the code.
+        # is what makes the catalog unable to drift away from the code. Scoped to pre-commit:
+        # integration ops are covered by the post-merge/post-rewrite hook below.
         entry: scripts/hooks/regen-docs-and-stage.sh
         language: script
+        stages: [pre-commit]
         always_run: true
         pass_filenames: false
 
