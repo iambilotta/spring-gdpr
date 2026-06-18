@@ -73,7 +73,7 @@ jobs:
       # PATH install can never make local and CI disagree.
       TRACEGATE_REF: 3bb94964f1e0502d2e68681611bf5ac335180f4b
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v5
       - name: Drift-gate the requirements catalog (pinned tracegate via uvx)
         run: uvx --from "git+https://github.com/iambilotta/tracegate@${TRACEGATE_REF}" tracegate . --check
