@@ -108,6 +108,11 @@ public class AsyncAuditSinkDecorator implements AuditSink, AutoCloseable {
         return delegate.findBySubject(subjectId, from, to);
     }
 
+    @Override
+    public void initializeSchema() {
+        delegate.initializeSchema();
+    }
+
     public long droppedCount() {
         return dropped.sum();
     }

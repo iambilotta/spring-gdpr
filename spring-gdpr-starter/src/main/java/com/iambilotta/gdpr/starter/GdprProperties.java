@@ -60,6 +60,15 @@ public class GdprProperties {
          */
         private boolean autoCreateSchema = false;
 
+        /**
+         * Run the audit-store schema check (or {@code auto-create-schema} bootstrap) at startup, once the
+         * application is fully started. Default true (fail fast if the table is missing). Set false to skip
+         * ALL startup DB I/O for the audit sink, so the context can refresh without a live database: required
+         * for CDS/AOT training runs, GraalVM native builds, and no-DB test/dev boots. The sink still works at
+         * runtime; only the eager startup verification is skipped.
+         */
+        private boolean verifySchemaOnStartup = true;
+
         private final Async async = new Async();
 
         public boolean isJdbcEnabled() {
@@ -84,6 +93,14 @@ public class GdprProperties {
 
         public void setAutoCreateSchema(boolean autoCreateSchema) {
             this.autoCreateSchema = autoCreateSchema;
+        }
+
+        public boolean isVerifySchemaOnStartup() {
+            return verifySchemaOnStartup;
+        }
+
+        public void setVerifySchemaOnStartup(boolean verifySchemaOnStartup) {
+            this.verifySchemaOnStartup = verifySchemaOnStartup;
         }
 
         public Async getAsync() {
