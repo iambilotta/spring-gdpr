@@ -8,6 +8,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -91,6 +92,22 @@ public class GdprAutoConfiguration {
         }
         return new AsyncAuditSinkDecorator(
                 base, async.getThreadCount(), async.getQueueCapacity(), async.getAwaitMillis());
+    }
+
+    /**
+     * Initializes the audit-store schema (verify, or {@code auto-create-schema} bootstrap) AFTER the
+     * application has fully started, never during bean construction. An {@link ApplicationRunner} runs after
+     * the context refresh, so on a real boot it still fails fast if the table is missing; but a context that
+     * exits at refresh (the CDS/AOT training run with {@code spring.context.exit=onRefresh}, a GraalVM native
+     * build, a no-DB test boot) never reaches the runner and so does no DB I/O. Disable via
+     * {@code spring.gdpr.audit.verify-schema-on-startup=false}.
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "gdprAuditSchemaInitializer")
+    @ConditionalOnProperty(prefix = "spring.gdpr.audit", name = "verify-schema-on-startup",
+            havingValue = "true", matchIfMissing = true)
+    public ApplicationRunner gdprAuditSchemaInitializer(AuditSink sink) {
+        return args -> sink.initializeSchema();
     }
 
     private AuditSink buildBaseSink(GdprProperties properties, ObjectProvider<DataSource> dataSourceProvider) {

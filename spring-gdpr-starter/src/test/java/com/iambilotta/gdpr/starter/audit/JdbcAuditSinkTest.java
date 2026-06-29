@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JdbcAuditSinkTest {
@@ -29,6 +30,7 @@ class JdbcAuditSinkTest {
     @Test
     void writeAndQueryRoundTrip() {
         JdbcAuditSink sink = new JdbcAuditSink(dataSource, "gdpr_audit_access", true);
+        sink.initializeSchema();
 
         Instant t0 = Instant.parse("2030-01-01T10:00:00Z");
         Instant t1 = Instant.parse("2030-01-01T10:05:00Z");
@@ -49,6 +51,7 @@ class JdbcAuditSinkTest {
     @Test
     void filtersByTimeWindow() {
         JdbcAuditSink sink = new JdbcAuditSink(dataSource, "gdpr_audit_access", true);
+        sink.initializeSchema();
         sink.write(record("old", Instant.parse("2025-01-01T00:00:00Z"), "x", "T", "m", "6(1)(a)", false));
         sink.write(record("new", Instant.parse("2030-01-01T00:00:00Z"), "x", "T", "m", "6(1)(a)", false));
 
@@ -73,14 +76,30 @@ class JdbcAuditSinkTest {
     void schemaIsIdempotent() {
         JdbcAuditSink first = new JdbcAuditSink(dataSource, "gdpr_audit_access", true);
         JdbcAuditSink second = new JdbcAuditSink(dataSource, "gdpr_audit_access", true);
+        first.initializeSchema();
+        second.initializeSchema(); // bootstrapping a second time over the same table is a no-op
 
         second.write(record("after-second-bootstrap", Instant.now(), "x", "T", "m", "6(1)(a)", false));
         assertThat(first.findBySubject("x", null, null)).hasSize(1);
     }
 
     @Test
+    void constructorDoesNoDbIoSoTheBeanIsConstructibleWithoutADatabase() {
+        // The table is missing in the fresh H2 and autoCreate=false: the OLD constructor verified the table
+        // here and threw. The new constructor does NO DB I/O, so it must construct cleanly (CDS/AOT/native/
+        // no-DB-boot safe); the verification is deferred to initializeSchema() (see the fail-fast test).
+        assertThatCode(() -> new JdbcAuditSink(dataSource, "gdpr_audit_access", false))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> new JdbcAuditSink(dataSource, "gdpr_audit_access", true))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     void failsFastWhenTableMissingAndAutoCreateOff() {
-        assertThatThrownBy(() -> new JdbcAuditSink(dataSource, "gdpr_audit_access", false))
+        // The constructor does NO DB I/O (CDS/AOT/native/no-DB-boot safe); the fail-fast moved to
+        // initializeSchema(), which the autoconfig runs once the app has started.
+        JdbcAuditSink sink = new JdbcAuditSink(dataSource, "gdpr_audit_access", false);
+        assertThatThrownBy(sink::initializeSchema)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("not present")
                 .hasMessageContaining("V1__gdpr_audit_access.sql");
@@ -88,8 +107,9 @@ class JdbcAuditSinkTest {
 
     @Test
     void worksWhenTableExistsAndAutoCreateOff() {
-        new JdbcAuditSink(dataSource, "gdpr_audit_access", true);
+        new JdbcAuditSink(dataSource, "gdpr_audit_access", true).initializeSchema();
         JdbcAuditSink secondInstance = new JdbcAuditSink(dataSource, "gdpr_audit_access", false);
+        secondInstance.initializeSchema(); // table exists -> verify passes
 
         secondInstance.write(record("e1", Instant.now(), "alice", "T", "m", "6(1)(a)", false));
         assertThat(secondInstance.findBySubject("alice", null, null)).hasSize(1);

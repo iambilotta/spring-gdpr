@@ -34,6 +34,7 @@ public class JdbcAuditSink implements AuditSink {
 
     private final JdbcTemplate jdbc;
     private final String table;
+    private final boolean autoCreateSchema;
 
     public JdbcAuditSink(DataSource dataSource, String table) {
         this(dataSource, table, false);
@@ -42,6 +43,20 @@ public class JdbcAuditSink implements AuditSink {
     public JdbcAuditSink(DataSource dataSource, String table, boolean autoCreateSchema) {
         this.jdbc = new JdbcTemplate(dataSource);
         this.table = sanitize(table);
+        this.autoCreateSchema = autoCreateSchema;
+        // NO DB I/O in the constructor: a bean must be constructible without a live database, else CDS/AOT
+        // training runs, GraalVM native builds, tests and any boot before the DB is ready all fail at refresh.
+        // The schema check/bootstrap moved to {@link #initializeSchema()}, run by the autoconfig once the
+        // application is fully started (and skipped when the context exits at refresh, e.g. the CDS training run).
+    }
+
+    /**
+     * Bootstraps (auto-create) or verifies the audit table. Idempotent. Called by the autoconfig's
+     * startup runner on a real boot (DB available); never from the constructor, so the bean stays
+     * constructible without a database.
+     */
+    @Override
+    public void initializeSchema() {
         if (autoCreateSchema) {
             bootstrapSchema();
         } else {
